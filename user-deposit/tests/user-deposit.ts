@@ -41,19 +41,6 @@ describe('User Deposit', () => {
 
     await program.provider.send(create_receiver_token_tx, [receiver_token]);
 
-    let mint_tokens_tx = new Transaction().add(
-        Token.createMintToInstruction(
-            TOKEN_PROGRAM_ID,
-            mint_public_key, // mint
-            sender_token_public_key, // receiver (should be a token account)
-            program.provider.wallet.publicKey, // mint authority
-            [],
-            100
-        )
-    );
-
-    await program.provider.send(mint_tokens_tx);
-
     console.log("token balance: ", await program.provider.connection.getTokenAccountBalance(sender_token_public_key));
   });
 
@@ -70,7 +57,5 @@ describe('User Deposit', () => {
     })
     console.log("sender token balance: ", await program.provider.connection.getTokenAccountBalance(sender_token_public_key));
     console.log("receiver token balance: ", await program.provider.connection.getTokenAccountBalance(receiver_token.publicKey));
-
   })
-
 });
