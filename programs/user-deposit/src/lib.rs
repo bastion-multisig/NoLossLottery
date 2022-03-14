@@ -6,7 +6,7 @@ use spl_token_lending;
 pub mod addresses;
 use crate::addresses::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("GEpoZx3h32X7caJjFtoNseaN7BCgJgFTKmP53zMm3BkK");
 
 #[program]
 pub mod user_deposit {
@@ -52,6 +52,7 @@ pub struct Deposit<'info> {
     pub source_liquidity: Account<'info, TokenAccount>,
     #[account(mut)]
     pub destination_collateral_account: Account<'info, TokenAccount>,
+    /// CHECK: Safe because `transfer_authority` is not modified in the handler
     pub transfer_authority: AccountInfo<'info>,
 
     // tickets part

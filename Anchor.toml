@@ -1,13 +1,13 @@
 [features]
 seeds = false
 [programs.localnet]
-user_deposit = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+user_deposit = "GEpoZx3h32X7caJjFtoNseaN7BCgJgFTKmP53zMm3BkK"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
