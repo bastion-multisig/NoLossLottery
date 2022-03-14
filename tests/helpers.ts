@@ -23,15 +23,3 @@ export function getProvider(
         anchor.Provider.defaultOptions()
     );
 }
-
-export async function requestAirdrop(
-    connection: anchor.web3.Connection,
-    publicKey: anchor.web3.PublicKey,
-): Promise<void> {
-    const airdropSignature = await connection.requestAirdrop(
-        publicKey,
-        anchor.web3.LAMPORTS_PER_SOL * 20
-    );
-
-    await connection.confirmTransaction(airdropSignature);
-}

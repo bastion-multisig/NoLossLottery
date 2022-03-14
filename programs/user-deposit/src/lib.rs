@@ -29,17 +29,21 @@ pub mod user_deposit {
             &ToAccountInfos::to_account_infos(ctx.accounts),
         )?;
 
+        msg!("TRANSFERRED!");
+
         // mint tickets to user
         token::mint_to(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                 MintTo {
-                    mint: ctx.accounts.mint.to_account_info(),
+                    mint: ctx.accounts.ticket.to_account_info(),
                     to: ctx.accounts.receiver_ticket.to_account_info(),
                     authority: ctx.accounts.sender.to_account_info(),
                 }),
             amount,
         )?;
+
+        msg!("MINTED!");
 
         Ok(())
     }
@@ -59,6 +63,6 @@ pub struct Deposit<'info> {
     pub sender: Signer<'info>,
     #[account(mut)]
     pub receiver_ticket: Account<'info, TokenAccount>,
-    pub mint: Account<'info, Mint>,
+    pub ticket: Account<'info, Mint>,
     pub token_program: Program<'info, Token>,
 }

@@ -7,7 +7,7 @@ user_deposit = "GEpoZx3h32X7caJjFtoNseaN7BCgJgFTKmP53zMm3BkK"
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
