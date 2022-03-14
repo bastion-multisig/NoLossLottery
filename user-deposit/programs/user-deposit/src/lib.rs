@@ -49,9 +49,10 @@ pub mod user_deposit {
 pub struct Deposit<'info> {
     // solend part
     #[account(mut)]
-    pub source_liquidity: Signer<'info>,
+    pub source_liquidity: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub destination_collateral_account: Signer<'info>,
+    pub destination_collateral_account: Account<'info, TokenAccount>,
+    pub transfer_authority: AccountInfo<'info>,
 
     // tickets part
     pub sender: Signer<'info>,
