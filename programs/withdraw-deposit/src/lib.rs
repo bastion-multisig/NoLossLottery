@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
-use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
+use anchor_spl::token::{self, Mint, Burn, Token, TokenAccount};
 use spl_token_lending;
 
 pub mod addresses;
@@ -10,7 +10,6 @@ declare_id!("GEpoZx3h32X7caJjFtoNseaN7BCgJgFTKmP53zMm3BkK");
 
 #[program]
 pub mod withdraw_deposit {
-    use anchor_spl::token::Burn;
     use super::*;
 
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> ProgramResult {
