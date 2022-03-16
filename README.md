@@ -17,7 +17,7 @@ lends it to Solend
 and gives the required number of tickets to the user
 
 2. ### [Withdraw Deposit](./programs/withdraw-deposit)
-This programme takes the user's deposit from Solend,
+This program takes the user's deposit from Solend,
 returns it to the user and burns their tickets
 
 ## Build, and Deploy
