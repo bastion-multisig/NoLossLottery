@@ -2,6 +2,7 @@
 seeds = false
 [programs.localnet]
 user_deposit = "GEpoZx3h32X7caJjFtoNseaN7BCgJgFTKmP53zMm3BkK"
+withdraw_deposit = "7UutM2xYbh5T68eD7DtdXWLC4fy9Luc2YJ6V1me4BN8K"
 
 [registry]
 url = "https://anchor.projectserum.com"

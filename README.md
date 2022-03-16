@@ -11,10 +11,13 @@ on this amount. Then this % of profit is played
 out among all the users who made a deposit.
 
 ## Programs
-### [User Deposit](./programs/user-deposit)
+1. ### [User Deposit](./programs/user-deposit)
 This program takes the user's deposit,
 lends it to Solend 
 and gives the required number of tickets to the user
+2. ### [Withdraw Deposit](./programs/withdraw-deposit)
+This programme takes the user's deposit from Solend, 
+returns it to the user and burns their tickets
 
 ## Build, and Deploy
 First, install dependencies:
