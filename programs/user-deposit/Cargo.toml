@@ -17,4 +17,5 @@ default = []
 
 [dependencies]
 anchor-lang = "0.21.0"
-anchor-spl = {version = "0.21.0"}
+anchor-spl = "0.21.0"
+spl-token-lending = { git = "https://github.com/strange-dv/solana-program-library", version = "*", features = ["no-entrypoint"] }
