@@ -16,7 +16,7 @@ This program takes the user's deposit,
 lends it to Solend 
 and gives the required number of tickets to the user
 
-## Build, Deploy and Test
+## Build, and Deploy
 First, install dependencies:
 
 ```
@@ -42,8 +42,8 @@ Build the program:
 $ anchor build
 ```
 
-Run the test:
+Deploy the program:
 
 ```
-$ anchor test --skip-build --skip-deploy
+$ anchor deploy
 ```

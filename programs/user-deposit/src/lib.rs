@@ -24,12 +24,10 @@ pub mod user_deposit {
                 get_pubkey(DEVNET_SOLEND_CSOL_LIQUIDITY_SUPPLY),
                 get_pubkey(DEVNET_SOLEND_CSOL_COLLATERAL_MINT),
                 get_pubkey(DEVNET_SOLEND_LENDING_MARKET),
-                *ctx.accounts.source_liquidity.to_account_info().key,
+                *ctx.accounts.transfer_authority.to_account_info().key,
             ),
             &ToAccountInfos::to_account_infos(ctx.accounts),
         )?;
-
-        msg!("TRANSFERRED!");
 
         // mint tickets to user
         token::mint_to(
@@ -42,8 +40,6 @@ pub mod user_deposit {
                 }),
             amount,
         )?;
-
-        msg!("MINTED!");
 
         Ok(())
     }
