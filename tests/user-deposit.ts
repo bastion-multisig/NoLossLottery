@@ -1,75 +1,80 @@
 import * as token from "@solana/spl-token";
 import * as anchor from "@project-serum/anchor";
 import { UserDeposit } from "../target/types/user_deposit";
+import process from "process";
 
 describe("nolosslottery",  () => {
-    const provider = anchor.Provider.env()
+    const provider = anchor.Provider.env();
     anchor.setProvider(provider);
     const user_deposit_program = anchor.workspace.UserDeposit as anchor.Program<UserDeposit>;
 
-    const ticket = anchor.web3.Keypair.generate();
-    const receiver_token = anchor.web3.Keypair.generate();
-    const destinationCollateralAccount_token = anchor.web3.Keypair.generate();
+    let ticket;
+    let receiver_token;
+    let destinationCollateralAccount_token =
+        new anchor.web3.PublicKey("4hMXQHS7ReThpchXwnKHZhWoai88QGCJRPLiC9Jp57WS");
+    const payer = anchor.web3.Keypair.fromSecretKey(
+        Buffer.from(
+            JSON.parse(
+                require("fs").readFileSync(process.env.ANCHOR_WALLET, {
+                    encoding: "utf-8",
+                })
+            )
+        )
+    );
+    console.log(process.env.ANCHOR_WALLET);
 
     it('Initializes program state', async () => {
-        let tx = new anchor.web3.Transaction().add(
-            anchor.web3.SystemProgram.createAccount({
-                fromPubkey: user_deposit_program.provider.wallet.publicKey,
-                newAccountPubkey: ticket.publicKey,
-                space: token.MintLayout.span,
-                lamports: await token.getMinimumBalanceForRentExemptAccount(provider.connection),
-                programId: token.TOKEN_PROGRAM_ID,
-            }),
-            await token.createInitializeMintInstruction(
-                ticket.publicKey,
-                0,
-                provider.wallet.publicKey,
-                provider.wallet.publicKey,
-            )
+        await provider.connection.requestAirdrop(
+            payer.publicKey,
+            anchor.web3.LAMPORTS_PER_SOL * 10
         )
-        await provider.send(tx, [ticket])
 
-        tx = new anchor.web3.Transaction();
-        tx.add(
-            await token.createInitializeAccountInstruction(
-                receiver_token.publicKey,
-                ticket.publicKey,
-                provider.wallet.publicKey,
-                null,
-            )
-        )
-        await provider.send(tx, [receiver_token])
+        await provider.send(
+            (() => {
+                const tx = new anchor.web3.Transaction();
+                tx.add(
+                    anchor.web3.SystemProgram.transfer({
+                        fromPubkey: payer.publicKey,
+                        toPubkey: payer.publicKey,
+                        lamports: 950000000,
+                    }))
+                provider.wallet.signTransaction(tx)
+                return tx;
+            })(),
+        );
 
-        tx = new anchor.web3.Transaction();
-        tx.add(
-            await token.createInitializeAccountInstruction(
-                destinationCollateralAccount_token.publicKey,
-                // CSOL
-                new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf"),
-                provider.wallet.publicKey,
-                null,
-            )
-        )
-        await provider.send(tx, [destinationCollateralAccount_token])
+        ticket = await token.createMint(
+            provider.connection,
+            payer, // fee payer
+            payer.publicKey, // mint authority
+            payer.publicKey, // owner
+            8 // decimals
+        );
 
+        receiver_token = await token.createAssociatedTokenAccount(
+            provider.connection,
+            payer, // fee payer
+            ticket, // mint
+            payer.publicKey // owner,
+        );
     });
 
     it('Deposits and gets tickets', async () => {
-        let amount = new anchor.BN(10);
+        let amount = new anchor.BN(1);
         await user_deposit_program.rpc.deposit(amount, {
             accounts: {
-                sender: provider.wallet.publicKey, // mint authority
-                sourceLiquidity: user_deposit_program.provider.wallet.publicKey,
+                sender: payer.publicKey, // mint authority
+                sourceLiquidity: payer.publicKey,
                 destinationCollateralAccount: destinationCollateralAccount_token,
-                transferAuthority: provider.wallet.publicKey,
+                transferAuthority: payer.publicKey,
                 receiverTicket: receiver_token,
                 ticket: ticket, // mint
-                tokenProgram: token.TOKEN_PROGRAM_ID,
+                tokenProgram: user_deposit_program.programId,
             },
         })
         console.log("Collateral balance: ", await user_deposit_program
-            .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.publicKey));
+            .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token));
         console.log("User token balance: ", await user_deposit_program
-            .provider.connection.getTokenAccountBalance(receiver_token.publicKey));
+            .provider.connection.getTokenAccountBalance(receiver_token));
     })
 });
