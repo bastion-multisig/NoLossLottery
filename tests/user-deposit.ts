@@ -10,8 +10,8 @@ describe("nolosslottery",  () => {
 
     let ticket;
     let receiver_token;
-    let destinationCollateralAccount_token =
-        new anchor.web3.PublicKey("4hMXQHS7ReThpchXwnKHZhWoai88QGCJRPLiC9Jp57WS");
+    let source_token;
+    let destinationCollateralAccount_token;
     const payer = anchor.web3.Keypair.fromSecretKey(
         Buffer.from(
             JSON.parse(
@@ -21,7 +21,6 @@ describe("nolosslottery",  () => {
             )
         )
     );
-    console.log(process.env.ANCHOR_WALLET);
 
     it('Initializes program state', async () => {
         await provider.connection.requestAirdrop(
@@ -29,26 +28,12 @@ describe("nolosslottery",  () => {
             anchor.web3.LAMPORTS_PER_SOL * 10
         )
 
-        await provider.send(
-            (() => {
-                const tx = new anchor.web3.Transaction();
-                tx.add(
-                    anchor.web3.SystemProgram.transfer({
-                        fromPubkey: payer.publicKey,
-                        toPubkey: payer.publicKey,
-                        lamports: 950000000,
-                    }))
-                provider.wallet.signTransaction(tx)
-                return tx;
-            })(),
-        );
-
         ticket = await token.createMint(
             provider.connection,
             payer, // fee payer
             payer.publicKey, // mint authority
             payer.publicKey, // owner
-            8 // decimals
+            0 // decimals
         );
 
         receiver_token = await token.createAssociatedTokenAccount(
@@ -57,19 +42,33 @@ describe("nolosslottery",  () => {
             ticket, // mint
             payer.publicKey // owner,
         );
+        source_token = await token.getOrCreateAssociatedTokenAccount(
+            provider.connection,
+            payer, // fee payer
+            token.NATIVE_MINT, // mint
+            payer.publicKey // owner,
+        );
+        destinationCollateralAccount_token = await token.getOrCreateAssociatedTokenAccount(
+            provider.connection,
+            payer, // fee payer
+            new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf"), // mint
+            payer.publicKey // owner,
+        );
     });
 
     it('Deposits and gets tickets', async () => {
         let amount = new anchor.BN(1);
+        console.log("ACC ", source_token.address)
+        console.log("ACC ", receiver_token)
         await user_deposit_program.rpc.deposit(amount, {
             accounts: {
                 sender: payer.publicKey, // mint authority
-                sourceLiquidity: payer.publicKey,
-                destinationCollateralAccount: destinationCollateralAccount_token,
+                sourceLiquidity: source_token.address,
+                destinationCollateralAccount: destinationCollateralAccount_token.address,
                 transferAuthority: payer.publicKey,
                 receiverTicket: receiver_token,
                 ticket: ticket, // mint
-                tokenProgram: user_deposit_program.programId,
+                tokenProgram: token.TOKEN_PROGRAM_ID,
             },
         })
         console.log("Collateral balance: ", await user_deposit_program
