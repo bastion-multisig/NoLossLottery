@@ -59,6 +59,7 @@ pub struct Withdraw<'info> {
     pub sender: Signer<'info>,
     #[account(mut)]
     pub sender_ticket: Account<'info, TokenAccount>,
+    #[account(mut)]
     pub ticket: Account<'info, Mint>,
     pub token_program: Program<'info, Token>,
 }
