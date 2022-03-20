@@ -42,24 +42,27 @@ describe("nolosslottery",  () => {
             ticket, // mint
             payer.publicKey // owner,
         );
-        source_token = await token.getOrCreateAssociatedTokenAccount(
-            provider.connection,
-            payer, // fee payer
-            token.NATIVE_MINT, // mint
-            payer.publicKey // owner,
+        source_token =
+            await token.getOrCreateAssociatedTokenAccount(
+                provider.connection,
+                payer, // fee payer
+                token.NATIVE_MINT, // mint
+                payer.publicKey // owner,
         );
-        destinationCollateralAccount_token = await token.getOrCreateAssociatedTokenAccount(
-            provider.connection,
-            payer, // fee payer
-            new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf"), // mint
-            payer.publicKey // owner,
+        destinationCollateralAccount_token =
+            await token.getOrCreateAssociatedTokenAccount(
+                provider.connection,
+                payer, // fee payer
+                new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf"), // mint
+                payer.publicKey // owner,
         );
+        console.log("ACC ", source_token)
+        console.log("ACC ", typeof receiver_token)
     });
 
     it('Deposits and gets tickets', async () => {
         let amount = new anchor.BN(1);
-        console.log("ACC ", source_token.address)
-        console.log("ACC ", receiver_token)
+
         await user_deposit_program.rpc.deposit(amount, {
             accounts: {
                 sender: payer.publicKey, // mint authority
@@ -72,7 +75,7 @@ describe("nolosslottery",  () => {
             },
         })
         console.log("Collateral balance: ", await user_deposit_program
-            .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token));
+            .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address));
         console.log("User token balance: ", await user_deposit_program
             .provider.connection.getTokenAccountBalance(receiver_token));
     })
