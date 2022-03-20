@@ -1,12 +1,14 @@
 import * as token from "@solana/spl-token";
 import * as anchor from "@project-serum/anchor";
 import { UserDeposit } from "../target/types/user_deposit";
+import { WithdrawDeposit } from "../target/types/withdraw_deposit";
 import process from "process";
 
 describe("nolosslottery",  () => {
     const provider = anchor.Provider.env();
     anchor.setProvider(provider);
     const user_deposit_program = anchor.workspace.UserDeposit as anchor.Program<UserDeposit>;
+    const withdraw_deposit_program = anchor.workspace.WithdrawDeposit as anchor.Program<WithdrawDeposit>;
 
     let ticket;
     let receiver_token;
@@ -70,6 +72,26 @@ describe("nolosslottery",  () => {
                 destinationCollateralAccount: destinationCollateralAccount_token.address,
                 transferAuthority: payer.publicKey,
                 receiverTicket: receiver_token,
+                ticket: ticket, // mint
+                tokenProgram: token.TOKEN_PROGRAM_ID,
+            },
+        })
+        console.log("Collateral balance: ", await user_deposit_program
+            .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address));
+        console.log("User token balance: ", await user_deposit_program
+            .provider.connection.getTokenAccountBalance(receiver_token));
+    })
+
+    it('Withdraws and burns tickets', async () => {
+        let amount = new anchor.BN(1);
+
+        await withdraw_deposit_program.rpc.withdraw(amount, {
+            accounts: {
+                sender: payer.publicKey, // mint authority
+                destinationLiquidity: source_token.address,
+                sourceCollateralAccount: destinationCollateralAccount_token.address,
+                transferAuthority: payer.publicKey,
+                senderTicket: receiver_token,
                 ticket: ticket, // mint
                 tokenProgram: token.TOKEN_PROGRAM_ID,
             },
