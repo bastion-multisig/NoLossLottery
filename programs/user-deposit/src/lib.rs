@@ -13,18 +13,19 @@ pub mod user_deposit {
     use super::*;
 
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> ProgramResult {
+        msg!("{:?}", ctx.accounts.lending_market_authority.key);
         // deposit to Solend
         solana_program::program::invoke(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
-                get_pubkey(DEVNET_SOLEND_PROGRAM),
+                ctx.accounts.lending_program.key.clone(),
                 amount,
-                *ctx.accounts.source_liquidity.to_account_info().key,
-                *ctx.accounts.destination_collateral_account.to_account_info().key,
-                get_pubkey(DEVNET_SOLEND_SOL_RESERVE),
-                get_pubkey(DEVNET_SOLEND_CSOL_LIQUIDITY_SUPPLY),
-                get_pubkey(DEVNET_SOLEND_CSOL_COLLATERAL_MINT),
-                get_pubkey(DEVNET_SOLEND_LENDING_MARKET),
-                *ctx.accounts.transfer_authority.to_account_info().key,
+                ctx.accounts.source_liquidity.key().clone(),
+                ctx.accounts.destination_collateral_account.key().clone(),
+                ctx.accounts.reserve.key.clone(),
+                ctx.accounts.reserve_liquidity_supply.key.clone(),
+                ctx.accounts.reserve_collateral_mint.key.clone(),
+                ctx.accounts.lending_market.key.clone(),
+                ctx.accounts.transfer_authority.key().clone(),
             ),
             &ToAccountInfos::to_account_infos(ctx.accounts),
         )?;
@@ -48,10 +49,29 @@ pub mod user_deposit {
 #[derive(Accounts)]
 pub struct Deposit<'info> {
     // solend part
+    /// CHECK: Safe because `lending_program` is not modified in the handler
+    pub lending_program: AccountInfo<'info>,
     #[account(mut)]
     pub source_liquidity: Account<'info, TokenAccount>,
     #[account(mut)]
     pub destination_collateral_account: Account<'info, TokenAccount>,
+    /// CHECK: Safe because `reserve` is not modified in the handler
+    pub reserve: AccountInfo<'info>,
+    // Token mint for reserve collateral token
+    /// CHECK: Safe because `reserve_collateral_mint` is not modified in the handler
+    pub reserve_collateral_mint: AccountInfo<'info>,
+    // Reserve liquidity supply SPL token account
+    /// CHECK: Safe because `reserve_liquidity_supply` is not modified in the handler
+    pub reserve_liquidity_supply: AccountInfo<'info>,
+    // Lending market account
+    /// CHECK: Safe because `lending_market` is not modified in the handler
+    pub lending_market: AccountInfo<'info>,
+    // Lending market authority (PDA)
+    /// CHECK: Safe because `lending_market_authority` is not modified in the handler
+    pub lending_market_authority: AccountInfo<'info>,
+    // Transfer authority for accounts 1 and 2
+    // Clock
+    pub clock: Sysvar<'info, Clock>,
     /// CHECK: Safe because `transfer_authority` is not modified in the handler
     pub transfer_authority: AccountInfo<'info>,
 
