@@ -1,14 +1,12 @@
 import * as token from "@solana/spl-token";
 import * as anchor from "@project-serum/anchor";
 import { UserDeposit } from "../target/types/user_deposit";
-import { WithdrawDeposit } from "../target/types/withdraw_deposit";
 import process from "process";
 
 describe("nolosslottery",  () => {
     const provider = anchor.Provider.env();
     anchor.setProvider(provider);
     const user_deposit_program = anchor.workspace.UserDeposit as anchor.Program<UserDeposit>;
-    const withdraw_deposit_program = anchor.workspace.WithdrawDeposit as anchor.Program<WithdrawDeposit>;
 
     let ticket;
     let receiver_token;
@@ -84,7 +82,7 @@ describe("nolosslottery",  () => {
                 sender: payer.publicKey, // mint authority
                 sourceLiquidity: source_token.address,
                 destinationCollateralAccount: destinationCollateralAccount_token.address,
-                lendingProgram: lending_program,
+                // lendingProgram: lending_program,
                 lendingMarket: lending_market,
                 reserve: reserve,
                 reserveCollateralMint: reserve_collateral_mint,
@@ -106,7 +104,7 @@ describe("nolosslottery",  () => {
     it('Withdraws and burns tickets', async () => {
         let amount = new anchor.BN(1);
 
-        await withdraw_deposit_program.rpc.withdraw(amount, {
+        await user_deposit_program.rpc.withdraw(amount, {
             accounts: {
                 sender: payer.publicKey, // mint authority
                 destinationLiquidity: source_token.address,
