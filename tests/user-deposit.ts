@@ -2,6 +2,7 @@ import * as token from "@solana/spl-token";
 import * as anchor from "@project-serum/anchor";
 import { UserDeposit } from "../target/types/user_deposit";
 import process from "process";
+import * as assert from "assert";
 
 describe("nolosslottery",  () => {
     const provider = anchor.Provider.env();
@@ -29,9 +30,7 @@ describe("nolosslottery",  () => {
     const lending_market = new anchor.web3.PublicKey("GvjoVKNjBvQcFaSKUW1gTE7DxhSpjHbE69umVR5nPuQp");
     let lending_market_authority;
     let _;
-
-
-    it('Initializes program state', async () => {
+    it('Initializes program accounts', async () => {
         await provider.connection.requestAirdrop(
             payer.publicKey,
             anchor.web3.LAMPORTS_PER_SOL * 10
@@ -71,25 +70,53 @@ describe("nolosslottery",  () => {
                 payer.publicKey // owner,
         );
         console.log("ACC ", source_token)
-        console.log("ACC ", typeof receiver_token)
+        console.log("ACC ", receiver_token)
+        console.log("ACC ", destinationCollateralAccount_token)
+    });
+
+    it('Initializes', async () => {
+        const [userAccount, userAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                    payer.publicKey.toBuffer(),],
+                user_deposit_program.programId
+            );
+
+        try {
+            await user_deposit_program.rpc.initUserDeposit(
+                userAccountBump,
+                {
+                    accounts: {
+                        signer: payer.publicKey,
+                        userDepositAccount: userAccount,
+                        systemProgram: anchor.web3.SystemProgram.programId,
+                    },
+                });
+
+            const userState = await user_deposit_program.account.userDeposit.fetch(userAccount);
+            assert.ok(userState.total.toString() == "0");
+        } catch (e) { } // already initialized
     });
 
     it('Deposits and gets tickets', async () => {
+        const [userAccount, userAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                    payer.publicKey.toBuffer(),],
+                user_deposit_program.programId
+            );
+
         let amount = new anchor.BN(1);
 
         await user_deposit_program.rpc.deposit(amount, {
             accounts: {
-                sender: payer.publicKey, // mint authority
                 sourceLiquidity: source_token.address,
                 destinationCollateralAccount: destinationCollateralAccount_token.address,
-                // lendingProgram: lending_program,
-                lendingMarket: lending_market,
-                reserve: reserve,
-                reserveCollateralMint: reserve_collateral_mint,
-                reserveLiquiditySupply: reserve_liquidity_supply,
-                lendingMarketAuthority: lending_market_authority,
                 transferAuthority: payer.publicKey,
-                clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+
+                userDepositAccount: userAccount,
+
+                sender: payer.publicKey, // mint authority
                 receiverTicket: receiver_token,
                 ticket: ticket, // mint
                 tokenProgram: token.TOKEN_PROGRAM_ID,
@@ -99,17 +126,29 @@ describe("nolosslottery",  () => {
             .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address));
         console.log("User token balance: ", await user_deposit_program
             .provider.connection.getTokenAccountBalance(receiver_token));
+        console.log("User deposit state: ", await user_deposit_program
+            .account.userDeposit.fetch(userAccount));
     })
 
     it('Withdraws and burns tickets', async () => {
+        const [userAccount, userAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                    payer.publicKey.toBuffer(),],
+                user_deposit_program.programId
+            );
+
         let amount = new anchor.BN(1);
 
         await user_deposit_program.rpc.withdraw(amount, {
             accounts: {
-                sender: payer.publicKey, // mint authority
-                destinationLiquidity: source_token.address,
                 sourceCollateralAccount: destinationCollateralAccount_token.address,
+                destinationLiquidity: source_token.address,
                 transferAuthority: payer.publicKey,
+
+                userDepositAccount: userAccount,
+
+                sender: payer.publicKey, // mint authority
                 senderTicket: receiver_token,
                 ticket: ticket, // mint
                 tokenProgram: token.TOKEN_PROGRAM_ID,
@@ -119,5 +158,7 @@ describe("nolosslottery",  () => {
             .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address));
         console.log("User token balance: ", await user_deposit_program
             .provider.connection.getTokenAccountBalance(receiver_token));
+        console.log("User deposit state: ", await user_deposit_program
+            .account.userDeposit.fetch(userAccount));
     })
 });
