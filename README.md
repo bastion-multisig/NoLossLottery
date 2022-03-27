@@ -11,15 +11,16 @@ on this amount. Then this % of profit is played
 out among all the users who made a deposit.
 
 ## Endpoints
-1. ### Initialize
+
+### Initialize
 Initializes user's deposit state
-2. ### Deposit
+### Deposit
 Takes the user's deposit, lends it to Solend
 and gives the required number of tickets to the user
-3. ### Withdraw
+### Withdraw
 Takes the user's deposit from Solend,
 returns it to the user and burns their tickets
-4. ### Lottery
+### Lottery
 Main lottery endpoint
 
 ## Build, Test and Deploy
