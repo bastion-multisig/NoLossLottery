@@ -185,4 +185,21 @@ describe("nolosslottery",  () => {
         console.log("Lottery state: ", await nolosslottery
             .account.lottery.fetch(lotteryAccount));
     })
+
+    it('Raffles', async () => {
+        const [lotteryAccount, _lotteryAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("lottery")],
+                nolosslottery.programId
+            );
+
+        await nolosslottery.rpc.lottery({
+            accounts: {
+                lotteryAccount: lotteryAccount,
+                collateralAccount: destinationCollateralAccount_token.address,
+            },
+        })
+        console.log("Lottery state: ", await nolosslottery
+            .account.lottery.fetch(lotteryAccount));
+    })
 });

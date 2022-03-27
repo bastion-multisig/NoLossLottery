@@ -1,7 +1,9 @@
-use std::str::FromStr;
 use anchor_lang::prelude::Pubkey;
+use std::str::FromStr;
 
-pub fn get_pubkey(pubkey_str: &str) -> Pubkey { Pubkey::from_str(pubkey_str).unwrap() }
+pub fn get_pubkey(pubkey_str: &str) -> Pubkey {
+    Pubkey::from_str(pubkey_str).unwrap()
+}
 
 // Solend global devnet addresses
 pub const DEVNET_SOLEND_PROGRAM: &str = "ALend7Ketfx5bxh6ghsCDXAoDrhvEmsXT3cynB6aPLgx";

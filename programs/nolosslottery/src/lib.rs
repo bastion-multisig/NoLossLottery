@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
-use anchor_spl::token::{self, Mint, Burn, MintTo, Token, TokenAccount};
+use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount};
 use spl_token_lending;
 
 pub mod addresses;
@@ -48,7 +48,8 @@ pub mod nolosslottery {
                     mint: ctx.accounts.ticket.to_account_info(),
                     to: ctx.accounts.receiver_ticket.to_account_info(),
                     authority: ctx.accounts.sender.to_account_info(),
-                }),
+                },
+            ),
             amount,
         )?;
 
@@ -83,13 +84,20 @@ pub mod nolosslottery {
                     mint: ctx.accounts.ticket.to_account_info(),
                     to: ctx.accounts.sender_ticket.to_account_info(),
                     authority: ctx.accounts.sender.to_account_info(),
-                }),
+                },
+            ),
             amount,
         )?;
 
         ctx.accounts.user_deposit_account.total -= amount;
         ctx.accounts.lottery_account.total -= amount;
 
+        Ok(())
+    }
+
+    pub fn lottery(ctx: Context<LotteryInstruction>) -> ProgramResult {
+        let prize_amount =
+            ctx.accounts.collateral_account.amount - ctx.accounts.lottery_account.total;
         Ok(())
     }
 }
@@ -106,9 +114,10 @@ pub struct InitializeLottery<'info> {
         space = 8 + 16 + 16
     )]
     pub lottery_account: Account<'info, Lottery>,
-    pub system_program: Program<'info, System>
+    pub system_program: Program<'info, System>,
 }
 
+// a struct to save the lottery state
 #[account]
 #[derive(Default)]
 pub struct Lottery {
@@ -129,7 +138,7 @@ pub struct InitializeDeposit<'info> {
         space = 8 + 16 + 16
     )]
     pub user_deposit_account: Account<'info, UserDeposit>,
-    pub system_program: Program<'info, System>
+    pub system_program: Program<'info, System>,
 }
 
 #[account]
@@ -187,4 +196,13 @@ pub struct Withdraw<'info> {
     #[account(mut)]
     pub ticket: Account<'info, Mint>,
     pub token_program: Program<'info, Token>,
+}
+
+// an instruction for the `lottery` endpoint
+#[derive(Accounts)]
+pub struct LotteryInstruction<'info> {
+    #[account(mut)]
+    pub lottery_account: Account<'info, Lottery>,
+    #[account(mut)]
+    pub collateral_account: Account<'info, TokenAccount>,
 }
