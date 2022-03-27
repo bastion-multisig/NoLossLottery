@@ -12,6 +12,11 @@ declare_id!("4Qhq8k5JJC5P36mjN2m37gyGHKigyaGZ8bY1PRP2hJGY");
 pub mod nolosslottery {
     use super::*;
 
+    pub fn init_lottery(ctx: Context<InitializeLottery>, bump: u8) -> ProgramResult {
+        ctx.accounts.lottery_account.bump = bump;
+        Ok(())
+    }
+
     pub fn init_user_deposit(ctx: Context<InitializeDeposit>, bump: u8) -> ProgramResult {
         ctx.accounts.user_deposit_account.bump = bump;
         ctx.accounts.user_deposit_account.total = 0;
@@ -48,6 +53,7 @@ pub mod nolosslottery {
         )?;
 
         ctx.accounts.user_deposit_account.total += amount;
+        ctx.accounts.lottery_account.total += amount;
 
         Ok(())
     }
@@ -82,9 +88,32 @@ pub mod nolosslottery {
         )?;
 
         ctx.accounts.user_deposit_account.total -= amount;
+        ctx.accounts.lottery_account.total -= amount;
 
         Ok(())
     }
+}
+
+#[derive(Accounts)]
+pub struct InitializeLottery<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    #[account(
+        init,
+        seeds = ["lottery".as_ref()],
+        bump,
+        payer = signer,
+        space = 8 + 16 + 16
+    )]
+    pub lottery_account: Account<'info, Lottery>,
+    pub system_program: Program<'info, System>
+}
+
+#[account]
+#[derive(Default)]
+pub struct Lottery {
+    pub bump: u8,
+    pub total: u64,
 }
 
 #[derive(Accounts)]
@@ -123,6 +152,8 @@ pub struct Deposit<'info> {
     // lottery part
     #[account(mut)]
     pub user_deposit_account: Account<'info, UserDeposit>,
+    #[account(mut)]
+    pub lottery_account: Account<'info, Lottery>,
 
     // tickets part
     pub sender: Signer<'info>,
@@ -146,6 +177,8 @@ pub struct Withdraw<'info> {
     // lottery part
     #[account(mut)]
     pub user_deposit_account: Account<'info, UserDeposit>,
+    #[account(mut)]
+    pub lottery_account: Account<'info, Lotteryg>,
 
     // tickets part
     pub sender: Signer<'info>,

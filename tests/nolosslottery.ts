@@ -84,13 +84,38 @@ describe("nolosslottery",  () => {
             const userState = await nolosslottery.account.userDeposit.fetch(userAccount);
             assert.ok(userState.total.toString() == "0");
         } catch (e) { } // already initialized
+
+        const [lotteryAccount, lotteryAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("lottery")],
+                nolosslottery.programId
+            );
+        try {
+            await nolosslottery.rpc.initLottery(
+                lotteryAccountBump,
+                {
+                    accounts: {
+                        signer: payer.publicKey,
+                        lotteryAccount: lotteryAccount,
+                        systemProgram: anchor.web3.SystemProgram.programId,
+                    },
+                });
+
+            const lotteryState = await nolosslottery.account.userDeposit.fetch(lotteryAccount);
+            assert.ok(lotteryState.total.toString() == "0");
+        } catch (e) { } // already initialized
     });
 
     it('Deposits and gets tickets', async () => {
-        const [userAccount, userAccountBump] =
+        const [userAccount, _userAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("nolosslottery"),
                     payer.publicKey.toBuffer(),],
+                nolosslottery.programId
+            );
+        const [lotteryAccount, _lotteryAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("lottery")],
                 nolosslottery.programId
             );
 
@@ -103,6 +128,7 @@ describe("nolosslottery",  () => {
                 transferAuthority: payer.publicKey,
 
                 userDepositAccount: userAccount,
+                lotteryAccount: lotteryAccount,
 
                 sender: payer.publicKey, // mint authority
                 receiverTicket: receiver_token,
@@ -116,13 +142,20 @@ describe("nolosslottery",  () => {
             .provider.connection.getTokenAccountBalance(receiver_token));
         console.log("User deposit state: ", await nolosslottery
             .account.userDeposit.fetch(userAccount));
+        console.log("Lottery state: ", await nolosslottery
+            .account.lottery.fetch(lotteryAccount));
     })
 
     it('Withdraws and burns tickets', async () => {
-        const [userAccount, userAccountBump] =
+        const [userAccount, _userAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("nolosslottery"),
                     payer.publicKey.toBuffer(),],
+                nolosslottery.programId
+            );
+        const [lotteryAccount, _lotteryAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("lottery")],
                 nolosslottery.programId
             );
 
@@ -135,6 +168,7 @@ describe("nolosslottery",  () => {
                 transferAuthority: payer.publicKey,
 
                 userDepositAccount: userAccount,
+                lotteryAccount: lotteryAccount,
 
                 sender: payer.publicKey, // mint authority
                 senderTicket: receiver_token,
@@ -148,5 +182,7 @@ describe("nolosslottery",  () => {
             .provider.connection.getTokenAccountBalance(receiver_token));
         console.log("User deposit state: ", await nolosslottery
             .account.userDeposit.fetch(userAccount));
+        console.log("Lottery state: ", await nolosslottery
+            .account.lottery.fetch(lotteryAccount));
     })
 });
