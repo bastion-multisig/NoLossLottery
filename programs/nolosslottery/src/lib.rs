@@ -178,7 +178,7 @@ pub struct Withdraw<'info> {
     #[account(mut)]
     pub user_deposit_account: Account<'info, UserDeposit>,
     #[account(mut)]
-    pub lottery_account: Account<'info, Lotteryg>,
+    pub lottery_account: Account<'info, Lottery>,
 
     // tickets part
     pub sender: Signer<'info>,
