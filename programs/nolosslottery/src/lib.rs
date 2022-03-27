@@ -6,10 +6,10 @@ use spl_token_lending;
 pub mod addresses;
 use crate::addresses::*;
 
-declare_id!("GEpoZx3h32X7caJjFtoNseaN7BCgJgFTKmP53zMm3BkK");
+declare_id!("4Qhq8k5JJC5P36mjN2m37gyGHKigyaGZ8bY1PRP2hJGY");
 
 #[program]
-pub mod user_deposit {
+pub mod nolosslottery {
     use super::*;
 
     pub fn init_user_deposit(ctx: Context<InitializeDeposit>, bump: u8) -> ProgramResult {

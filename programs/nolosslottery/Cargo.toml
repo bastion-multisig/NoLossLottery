@@ -1,12 +1,12 @@
 [package]
-name = "user-deposit"
+name = "nolosslottery"
 version = "0.1.0"
 description = "Created with Anchor"
 edition = "2018"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "user_deposit"
+name = "nolosslottery"
 
 [features]
 no-entrypoint = []

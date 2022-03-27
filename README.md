@@ -10,17 +10,19 @@ to debt platforms (lent), earning a % return
 on this amount. Then this % of profit is played
 out among all the users who made a deposit.
 
-## Programs
-1. ### [User Deposit](./programs/user-deposit)
-This program takes the user's deposit,
-lends it to Solend
+## Endpoints
+1. ### Initialize
+Initializes user's deposit state
+2. ### Deposit
+Takes the user's deposit, lends it to Solend
 and gives the required number of tickets to the user
-
-2. ### [Withdraw Deposit](./programs/withdraw-deposit)
-This program takes the user's deposit from Solend,
+3. ### Withdraw
+Takes the user's deposit from Solend,
 returns it to the user and burns their tickets
+4. ### Lottery
+Main lottery endpoint
 
-## Build, and Deploy
+## Build, Test and Deploy
 First, install dependencies:
 
 ```
@@ -46,6 +48,12 @@ Build the program:
 
 ```
 $ anchor build
+```
+
+Test the program:
+
+```
+$ anchor test
 ```
 
 Deploy the program:
