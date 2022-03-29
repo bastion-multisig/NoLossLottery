@@ -22,13 +22,24 @@ describe("nolosslottery",  () => {
             )
         )
     );
+    const lending_program = new anchor.web3.PublicKey("ALend7Ketfx5bxh6ghsCDXAoDrhvEmsXT3cynB6aPLgx");
+    const reserve = new anchor.web3.PublicKey("5VVLD7BQp8y3bTgyF5ezm1ResyMTR3PhYsT4iHFU8Sxz");
+    const reserve_collateral_mint = new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf");
+    const reserve_liquidity_supply = new anchor.web3.PublicKey("furd3XUtjXZ2gRvSsoUts9A5m8cMJNqdsyR2Rt8vY9s");
+    const lending_market = new anchor.web3.PublicKey("GvjoVKNjBvQcFaSKUW1gTE7DxhSpjHbE69umVR5nPuQp");
+    let lending_market_authority;
+    let _;
 
-    it('Initializes program accounts', async () => {
+    it('Initializes program state', async () => {
         await provider.connection.requestAirdrop(
             payer.publicKey,
             anchor.web3.LAMPORTS_PER_SOL * 10
         );
 
+        [lending_market_authority, _] = await anchor.web3.PublicKey.findProgramAddress(
+            [lending_market.toBuffer()],
+            lending_program
+        )
         ticket = await token.createMint(
             provider.connection,
             payer, // fee payer
@@ -125,7 +136,14 @@ describe("nolosslottery",  () => {
             accounts: {
                 sourceLiquidity: source_token.address,
                 destinationCollateralAccount: destinationCollateralAccount_token.address,
+                lendingProgram: lending_program,
+                lendingMarket: lending_market,
+                reserve: reserve,
+                reserveCollateralMint: reserve_collateral_mint,
+                reserveLiquiditySupply: reserve_liquidity_supply,
+                lendingMarketAuthority: lending_market_authority,
                 transferAuthority: payer.publicKey,
+                clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
 
                 userDepositAccount: userAccount,
                 lotteryAccount: lotteryAccount,
