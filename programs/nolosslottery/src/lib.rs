@@ -23,9 +23,12 @@ pub mod nolosslottery {
         Ok(())
     }
 
-    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> ProgramResult {
+    pub fn deposit(
+        ctx: Context<Deposit>,
+        amount: u64,
+    ) -> ProgramResult {
         // deposit to Solend
-        solana_program::program::invoke_signed(
+        solana_program::program::invoke(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
                 get_pubkey(DEVNET_SOLEND_PROGRAM),
                 amount,
@@ -54,7 +57,6 @@ pub mod nolosslottery {
                     .clone(),
             ),
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
-            &[&[&ctx.accounts.lending_market.signer_key().unwrap().to_bytes()]],
         )?;
 
         // mint tickets to user
@@ -172,18 +174,17 @@ pub struct Deposit<'info> {
     pub destination_collateral_account: Box<Account<'info, TokenAccount>>,
     /// CHECK:
     pub lending_program: AccountInfo<'info>,
-    /// CHECK:
+    #[account(mut)]
     pub reserve: AccountInfo<'info>,
-    /// CHECK:
+    #[account(mut)]
     pub reserve_liquidity_supply: AccountInfo<'info>,
-    /// CHECK:
+    #[account(mut)]
     pub reserve_collateral_mint: AccountInfo<'info>,
     /// CHECK:
     pub lending_market: AccountInfo<'info>,
     /// CHECK:
     pub lending_market_authority: AccountInfo<'info>,
-    /// CHECK: Safe because `transfer_authority` is not modified in the handler
-    pub transfer_authority: AccountInfo<'info>,
+    pub transfer_authority: Signer<'info>,
     pub clock: Sysvar<'info, Clock>,
 
     // lottery part

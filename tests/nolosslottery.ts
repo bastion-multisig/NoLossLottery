@@ -28,7 +28,7 @@ describe("nolosslottery",  () => {
     const reserve_liquidity_supply = new anchor.web3.PublicKey("furd3XUtjXZ2gRvSsoUts9A5m8cMJNqdsyR2Rt8vY9s");
     const lending_market = new anchor.web3.PublicKey("GvjoVKNjBvQcFaSKUW1gTE7DxhSpjHbE69umVR5nPuQp");
     let lending_market_authority;
-    let _;
+    let lending_market_authority_bump;
 
     it('Initializes program state', async () => {
         await provider.connection.requestAirdrop(
@@ -36,10 +36,11 @@ describe("nolosslottery",  () => {
             anchor.web3.LAMPORTS_PER_SOL * 10
         );
 
-        [lending_market_authority, _] = await anchor.web3.PublicKey.findProgramAddress(
+        [lending_market_authority, lending_market_authority_bump] = await anchor.web3.PublicKey.findProgramAddress(
             [lending_market.toBuffer()],
             lending_program
-        )
+        );
+
         ticket = await token.createMint(
             provider.connection,
             payer, // fee payer
@@ -68,6 +69,7 @@ describe("nolosslottery",  () => {
                 new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf"), // mint
                 payer.publicKey // owner,
         );
+
         console.log("ACC ", source_token)
         console.log("ACC ", receiver_token)
         console.log("ACC ", destinationCollateralAccount_token)
