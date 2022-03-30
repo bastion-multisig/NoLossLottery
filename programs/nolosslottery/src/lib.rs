@@ -6,7 +6,7 @@ use spl_token_lending;
 pub mod addresses;
 use crate::addresses::*;
 
-declare_id!("5P8fnLwtksan1nTtwx8JjpZjDWhRRC38FkQ8pJyP1dkM");
+declare_id!("25Jff5yUgTNZMPVPKdgxfg1b5unsekD9EkPpZBDQAVRk");
 
 #[program]
 pub mod nolosslottery {
@@ -57,7 +57,7 @@ pub mod nolosslottery {
                     .clone(),
             ),
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
-        )?;
+        ).unwrap();
 
         // mint tickets to user
         token::mint_to(

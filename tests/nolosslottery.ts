@@ -55,22 +55,39 @@ describe("nolosslottery",  () => {
             ticket, // mint
             payer.publicKey // owner,
         );
-        source_token =
-            await token.getOrCreateAssociatedTokenAccount(
-                provider.connection,
-                payer, // fee payer
-                token.NATIVE_MINT, // mint
-                payer.publicKey // owner,
-        );
         destinationCollateralAccount_token =
             await token.getOrCreateAssociatedTokenAccount(
                 provider.connection,
                 payer, // fee payer
                 new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf"), // mint
                 payer.publicKey // owner,
-        );
+            );
 
-        console.log("ACC ", source_token)
+        source_token = await token.getOrCreateAssociatedTokenAccount(
+                provider.connection,
+                payer, // fee payer
+                token.NATIVE_MINT, // mint
+                payer.publicKey // owner,
+            );
+
+        const solTransferTransaction = new anchor.web3.Transaction()
+            .add(
+                anchor.web3.SystemProgram.transfer({
+                    fromPubkey: payer.publicKey,
+                    toPubkey: source_token.address,
+                    lamports: anchor.web3.LAMPORTS_PER_SOL
+                }),
+                token.createSyncNativeInstruction(
+                    source_token.address
+                )
+            )
+
+        await anchor.web3.sendAndConfirmTransaction(
+            provider.connection,
+            solTransferTransaction,
+            [payer]);
+
+        console.log("Source Account Balance ", await provider.connection.getTokenAccountBalance(source_token.address))
         console.log("ACC ", receiver_token)
         console.log("ACC ", destinationCollateralAccount_token)
     });
@@ -156,10 +173,13 @@ describe("nolosslottery",  () => {
                 tokenProgram: token.TOKEN_PROGRAM_ID,
             },
         })
+
         console.log("Collateral balance: ", await nolosslottery
             .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address));
         console.log("User token balance: ", await nolosslottery
             .provider.connection.getTokenAccountBalance(receiver_token));
+        console.log("User SOL balance: ", await nolosslottery
+            .provider.connection.getTokenAccountBalance(source_token.address));
         console.log("User deposit state: ", await nolosslottery
             .account.userDeposit.fetch(userAccount));
         console.log("Lottery state: ", await nolosslottery
