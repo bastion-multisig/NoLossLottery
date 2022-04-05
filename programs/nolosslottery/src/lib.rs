@@ -6,7 +6,7 @@ use spl_token_lending;
 pub mod addresses;
 use crate::addresses::*;
 
-declare_id!("25Jff5yUgTNZMPVPKdgxfg1b5unsekD9EkPpZBDQAVRk");
+declare_id!("Ech9R2yButzDURQTTphjBDqgeHXATVutwVCZ1EfPLyLd");
 
 #[program]
 pub mod nolosslottery {
@@ -23,14 +23,11 @@ pub mod nolosslottery {
         Ok(())
     }
 
-    pub fn deposit(
-        ctx: Context<Deposit>,
-        amount: u64,
-    ) -> ProgramResult {
+    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> ProgramResult {
         // deposit to Solend
-        solana_program::program::invoke(
+        solana_program::program::invoke_signed(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
-                get_pubkey(DEVNET_SOLEND_PROGRAM),
+                *ctx.accounts.lending_program.key,
                 amount,
                 ctx.accounts.source_liquidity.to_account_info().key.clone(),
                 ctx.accounts
@@ -57,7 +54,9 @@ pub mod nolosslottery {
                     .clone(),
             ),
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
-        ).unwrap();
+            &[&[&ctx.accounts.transfer_authority.key.to_bytes()]],
+        )
+        .unwrap();
 
         // mint tickets to user
         token::mint_to(
@@ -79,19 +78,43 @@ pub mod nolosslottery {
     }
 
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> ProgramResult {
-        // // withdraw from Solend
-        // let instruction: solana_program::instruction::Instruction =
-        //     spl_token_lending::instruction::redeem_reserve_collateral(
-        //         get_pubkey(DEVNET_SOLEND_PROGRAM),
-        //         amount,
-        //         *ctx.accounts.source_collateral_account.to_account_info().key,
-        //         *ctx.accounts.destination_liquidity.to_account_info().key,
-        //         get_pubkey(DEVNET_SOLEND_SOL_RESERVE),
-        //         get_pubkey(DEVNET_SOLEND_CSOL_COLLATERAL_MINT),
-        //         get_pubkey(DEVNET_SOLEND_CSOL_LIQUIDITY_SUPPLY),
-        //         get_pubkey(DEVNET_SOLEND_LENDING_MARKET),
-        //         *ctx.accounts.transfer_authority.to_account_info().key,
-        //     );
+        // withdraw from Solend
+        solana_program::program::invoke_signed(
+            &spl_token_lending::instruction::redeem_reserve_collateral(
+                *ctx.accounts.lending_program.key,
+                amount,
+                ctx.accounts
+                    .source_collateral_account
+                    .to_account_info()
+                    .key
+                    .clone(),
+                ctx.accounts
+                    .destination_liquidity_account
+                    .to_account_info()
+                    .key
+                    .clone(),
+                ctx.accounts.reserve.to_account_info().key.clone(),
+                ctx.accounts
+                    .reserve_collateral_mint
+                    .to_account_info()
+                    .key
+                    .clone(),
+                ctx.accounts
+                    .reserve_liquidity_supply
+                    .to_account_info()
+                    .key
+                    .clone(),
+                ctx.accounts.lending_market.to_account_info().key.clone(),
+                ctx.accounts
+                    .transfer_authority
+                    .to_account_info()
+                    .key
+                    .clone(),
+            ),
+            ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
+            &[&[&ctx.accounts.transfer_authority.key.to_bytes()]],
+        )
+        .unwrap();
 
         // burn user's tickets
         token::burn(
@@ -206,12 +229,23 @@ pub struct Deposit<'info> {
 pub struct Withdraw<'info> {
     // solend part
     #[account(mut)]
-    pub destination_liquidity: Account<'info, TokenAccount>,
+    pub destination_liquidity_account: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub source_collateral_account: Account<'info, TokenAccount>,
-    /// CHECK: Safe because `transfer_authority` is not modified in the handler
-    pub transfer_authority: AccountInfo<'info>,
-
+    pub source_collateral_account: Box<Account<'info, TokenAccount>>,
+    /// CHECK:
+    pub lending_program: AccountInfo<'info>,
+    #[account(mut)]
+    pub reserve: AccountInfo<'info>,
+    #[account(mut)]
+    pub reserve_liquidity_supply: AccountInfo<'info>,
+    #[account(mut)]
+    pub reserve_collateral_mint: AccountInfo<'info>,
+    /// CHECK:
+    pub lending_market: AccountInfo<'info>,
+    /// CHECK:
+    pub lending_market_authority: AccountInfo<'info>,
+    pub transfer_authority: Signer<'info>,
+    pub clock: Sysvar<'info, Clock>,
     // lottery part
     #[account(mut)]
     pub user_deposit_account: Account<'info, UserDeposit>,

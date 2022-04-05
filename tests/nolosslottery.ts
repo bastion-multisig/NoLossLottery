@@ -31,11 +31,6 @@ describe("nolosslottery",  () => {
     let lending_market_authority_bump;
 
     it('Initializes program state', async () => {
-        await provider.connection.requestAirdrop(
-            payer.publicKey,
-            anchor.web3.LAMPORTS_PER_SOL * 10
-        );
-
         [lending_market_authority, lending_market_authority_bump] = await anchor.web3.PublicKey.findProgramAddress(
             [lending_market.toBuffer()],
             lending_program
@@ -203,9 +198,16 @@ describe("nolosslottery",  () => {
 
         await nolosslottery.rpc.withdraw(amount, {
             accounts: {
+                destinationLiquidityAccount: source_token.address,
                 sourceCollateralAccount: destinationCollateralAccount_token.address,
-                destinationLiquidity: source_token.address,
+                lendingProgram: lending_program,
+                lendingMarket: lending_market,
+                reserve: reserve,
+                reserveCollateralMint: reserve_collateral_mint,
+                reserveLiquiditySupply: reserve_liquidity_supply,
+                lendingMarketAuthority: lending_market_authority,
                 transferAuthority: payer.publicKey,
+                clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
 
                 userDepositAccount: userAccount,
                 lotteryAccount: lotteryAccount,
@@ -229,7 +231,7 @@ describe("nolosslottery",  () => {
     it('Raffles', async () => {
         const [lotteryAccount, _lotteryAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
-                [anchor.utils.bytes.utf8.encode("lottery")],
+                [payer.publicKey.toBuffer()],
                 nolosslottery.programId
             );
 
