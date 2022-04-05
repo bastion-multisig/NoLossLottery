@@ -14,6 +14,7 @@ pub mod nolosslottery {
 
     pub fn init_lottery(ctx: Context<InitializeLottery>, bump: u8) -> ProgramResult {
         ctx.accounts.lottery_account.bump = bump;
+        ctx.accounts.lottery_account.total_tickets = 0;
         Ok(())
     }
 
@@ -23,12 +24,12 @@ pub mod nolosslottery {
         Ok(())
     }
 
-    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> ProgramResult {
+    pub fn deposit(ctx: Context<Deposit>) -> ProgramResult {
         // deposit to Solend
         solana_program::program::invoke_signed(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
                 *ctx.accounts.lending_program.key,
-                amount,
+                1,
                 ctx.accounts.source_liquidity.to_account_info().key.clone(),
                 ctx.accounts
                     .destination_collateral_account
@@ -68,21 +69,26 @@ pub mod nolosslottery {
                     authority: ctx.accounts.sender.to_account_info(),
                 },
             ),
-            amount,
+            1,
         )?;
 
-        ctx.accounts.user_deposit_account.total += amount;
-        ctx.accounts.lottery_account.total += amount;
+        ctx.accounts.user_deposit_account.total += 1;
+        ctx.accounts.lottery_account.total += 1;
+
+        ctx.accounts.ticket_account.id = ctx.accounts.lottery_account.total_tickets;
+        ctx.accounts.ticket_account.owner = ctx.accounts.user_deposit_account.key();
+
+        ctx.accounts.lottery_account.total_tickets += 1;
 
         Ok(())
     }
 
-    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> ProgramResult {
+    pub fn withdraw(ctx: Context<Withdraw>) -> ProgramResult {
         // withdraw from Solend
         solana_program::program::invoke_signed(
             &spl_token_lending::instruction::redeem_reserve_collateral(
                 *ctx.accounts.lending_program.key,
-                amount,
+                1,
                 ctx.accounts
                     .source_collateral_account
                     .to_account_info()
@@ -126,11 +132,15 @@ pub mod nolosslottery {
                     authority: ctx.accounts.sender.to_account_info(),
                 },
             ),
-            amount,
+            1,
         )?;
 
-        ctx.accounts.user_deposit_account.total -= amount;
-        ctx.accounts.lottery_account.total -= amount;
+        ctx.accounts.user_deposit_account.total -= 1;
+        ctx.accounts.lottery_account.total -= 1;
+
+        // TODO: Close ticket PDA
+
+        ctx.accounts.lottery_account.total_tickets -= 1;
 
         Ok(())
     }
@@ -153,7 +163,7 @@ pub struct InitializeLottery<'info> {
         payer = signer,
         space = 8 + 16 + 16
     )]
-    pub lottery_account: Account<'info, Lottery>,
+    pub lottery_account: Box<Account<'info, Lottery>>,
     pub system_program: Program<'info, System>,
 }
 
@@ -163,6 +173,7 @@ pub struct InitializeLottery<'info> {
 pub struct Lottery {
     pub bump: u8,
     pub total: u64,
+    pub total_tickets: u64,
 }
 
 #[derive(Accounts)]
@@ -177,7 +188,7 @@ pub struct InitializeDeposit<'info> {
         payer = signer,
         space = 8 + 16 + 16
     )]
-    pub user_deposit_account: Account<'info, UserDeposit>,
+    pub user_deposit_account: Box<Account<'info, UserDeposit>>,
     pub system_program: Program<'info, System>,
 }
 
@@ -212,17 +223,33 @@ pub struct Deposit<'info> {
 
     // lottery part
     #[account(mut)]
-    pub user_deposit_account: Account<'info, UserDeposit>,
+    pub user_deposit_account: Box<Account<'info, UserDeposit>>,
     #[account(mut)]
-    pub lottery_account: Account<'info, Lottery>,
+    pub lottery_account: Box<Account<'info, Lottery>>,
 
     // tickets part
     pub sender: Signer<'info>,
     #[account(mut)]
-    pub receiver_ticket: Account<'info, TokenAccount>,
+    pub receiver_ticket: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub ticket: Account<'info, Mint>,
+    pub ticket: Box<Account<'info, Mint>>,
+    #[account(
+        init,
+        payer = sender,
+        space = 8 + 16 + 32,
+        seeds = ["ticket#".as_ref(), lottery_account.total_tickets.to_string().as_ref()],
+        bump
+    )]
+    pub ticket_account: Box<Account<'info, Ticket>>,
     pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+#[account]
+#[derive(Default)]
+pub struct Ticket {
+    pub id: u64,
+    pub owner: Pubkey,
 }
 
 #[derive(Accounts)]
@@ -248,16 +275,18 @@ pub struct Withdraw<'info> {
     pub clock: Sysvar<'info, Clock>,
     // lottery part
     #[account(mut)]
-    pub user_deposit_account: Account<'info, UserDeposit>,
+    pub user_deposit_account: Box<Account<'info, UserDeposit>>,
     #[account(mut)]
-    pub lottery_account: Account<'info, Lottery>,
+    pub lottery_account: Box<Account<'info, Lottery>>,
 
     // tickets part
     pub sender: Signer<'info>,
     #[account(mut)]
-    pub sender_ticket: Account<'info, TokenAccount>,
+    pub sender_ticket: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub ticket: Account<'info, Mint>,
+    pub ticket: Box<Account<'info, Mint>>,
+    #[account(mut)]
+    pub ticket_account: Box<Account<'info, Ticket>>,
     pub token_program: Program<'info, Token>,
 }
 
