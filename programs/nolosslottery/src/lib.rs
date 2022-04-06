@@ -1,13 +1,10 @@
+use crate::solana_program::entrypoint::ProgramResult;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount};
-use crate::solana_program::entrypoint::ProgramResult;
 use spl_token_lending;
 
-pub mod addresses;
-use crate::addresses::*;
-
-declare_id!("2xDxK8UjhRZTjd3GMHAjkgwYxQ3NgeKTFtiW6mksugzq");
+declare_id!("AaN5pQRq3nedSysxKgDYsQNmyARsxn7xqjXifXDW4dSY");
 
 #[program]
 pub mod nolosslottery {
@@ -152,11 +149,20 @@ pub mod nolosslottery {
     }
 
     pub fn lottery(ctx: Context<LotteryInstruction>) -> ProgramResult {
-        let _prize_amount =
+        let prize_amount =
             ctx.accounts.collateral_account.amount - ctx.accounts.lottery_account.total;
 
-        // let winner_ticket =
-        //     Pubkey::find_program_address(&["ticket#".as_ref(), "0".as_ref()], ctx.program_id).0;
+        // TODO: create a function that generates a random number
+        let winning_ticket_id = 0;
+
+        let winning_ticket = Pubkey::find_program_address(
+            &["ticket#".as_ref(), winning_ticket_id.to_string().as_ref()],
+            ctx.program_id,
+        )
+        .0;
+
+        ctx.accounts.lottery_account.winning_ticket = winning_ticket;
+        ctx.accounts.lottery_account.prize = prize_amount;
 
         Ok(())
     }
@@ -171,7 +177,7 @@ pub struct InitializeLottery<'info> {
         seeds = ["lottery".as_ref()],
         bump,
         payer = signer,
-        space = 8 + 16 + 16
+        space = 8 + 16 + 16 + 16 + 32 + 16
     )]
     pub lottery_account: Box<Account<'info, Lottery>>,
     pub system_program: Program<'info, System>,
@@ -184,6 +190,8 @@ pub struct Lottery {
     pub bump: u8,
     pub total: u64,
     pub total_tickets: u64,
+    pub winning_ticket: Pubkey,
+    pub prize: u64,
 }
 
 #[derive(Accounts)]
