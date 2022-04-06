@@ -1,7 +1,7 @@
 [features]
 seeds = false
 [programs.devnet]
-nolosslottery = "Ech9R2yButzDURQTTphjBDqgeHXATVutwVCZ1EfPLyLd"
+nolosslottery = "2xDxK8UjhRZTjd3GMHAjkgwYxQ3NgeKTFtiW6mksugzq"
 
 [registry]
 url = "https://anchor.projectserum.com"

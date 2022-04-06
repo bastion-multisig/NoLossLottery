@@ -16,6 +16,6 @@ cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = "0.21.0"
-anchor-spl = "0.21.0"
+anchor-lang = "0.23.0"
+anchor-spl = "0.23.0"
 spl-token-lending = { git = "https://github.com/strange-dv/solana-program-library", version = "*", features = ["no-entrypoint"] }

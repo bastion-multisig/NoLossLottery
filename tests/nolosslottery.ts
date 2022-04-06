@@ -251,7 +251,7 @@ describe("nolosslottery",  () => {
     it('Raffles', async () => {
         const [lotteryAccount, _lotteryAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
-                [payer.publicKey.toBuffer()],
+                [anchor.utils.bytes.utf8.encode("lottery")],
                 nolosslottery.programId
             );
 

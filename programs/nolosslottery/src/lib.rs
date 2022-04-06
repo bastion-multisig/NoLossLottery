@@ -1,12 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount};
+use crate::solana_program::entrypoint::ProgramResult;
 use spl_token_lending;
 
 pub mod addresses;
 use crate::addresses::*;
 
-declare_id!("Ech9R2yButzDURQTTphjBDqgeHXATVutwVCZ1EfPLyLd");
+declare_id!("2xDxK8UjhRZTjd3GMHAjkgwYxQ3NgeKTFtiW6mksugzq");
 
 #[program]
 pub mod nolosslottery {
@@ -21,12 +22,13 @@ pub mod nolosslottery {
     pub fn init_user_deposit(ctx: Context<InitializeDeposit>, bump: u8) -> ProgramResult {
         ctx.accounts.user_deposit_account.bump = bump;
         ctx.accounts.user_deposit_account.total = 0;
+        ctx.accounts.user_deposit_account.ticket_ids = vec![];
         Ok(())
     }
 
     pub fn deposit(ctx: Context<Deposit>) -> ProgramResult {
         // deposit to Solend
-        solana_program::program::invoke_signed(
+        solana_program::program::invoke(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
                 *ctx.accounts.lending_program.key,
                 1,
@@ -55,7 +57,6 @@ pub mod nolosslottery {
                     .clone(),
             ),
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
-            &[&[&ctx.accounts.transfer_authority.key.to_bytes()]],
         )
         .unwrap();
 
@@ -72,12 +73,21 @@ pub mod nolosslottery {
             1,
         )?;
 
+        // change user state
         ctx.accounts.user_deposit_account.total += 1;
+        ctx.accounts
+            .user_deposit_account
+            .ticket_ids
+            .push(ctx.accounts.lottery_account.total_tickets);
+
+        // total tickets count
         ctx.accounts.lottery_account.total += 1;
 
+        // new ticket
         ctx.accounts.ticket_account.id = ctx.accounts.lottery_account.total_tickets;
         ctx.accounts.ticket_account.owner = ctx.accounts.user_deposit_account.key();
 
+        // count the ticket
         ctx.accounts.lottery_account.total_tickets += 1;
 
         Ok(())
@@ -85,7 +95,7 @@ pub mod nolosslottery {
 
     pub fn withdraw(ctx: Context<Withdraw>) -> ProgramResult {
         // withdraw from Solend
-        solana_program::program::invoke_signed(
+        solana_program::program::invoke(
             &spl_token_lending::instruction::redeem_reserve_collateral(
                 *ctx.accounts.lending_program.key,
                 1,
@@ -118,7 +128,6 @@ pub mod nolosslottery {
                     .clone(),
             ),
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
-            &[&[&ctx.accounts.transfer_authority.key.to_bytes()]],
         )
         .unwrap();
 
@@ -137,17 +146,18 @@ pub mod nolosslottery {
 
         ctx.accounts.user_deposit_account.total -= 1;
         ctx.accounts.lottery_account.total -= 1;
-
-        // TODO: Close ticket PDA
-
         ctx.accounts.lottery_account.total_tickets -= 1;
 
         Ok(())
     }
 
     pub fn lottery(ctx: Context<LotteryInstruction>) -> ProgramResult {
-        let prize_amount =
+        let _prize_amount =
             ctx.accounts.collateral_account.amount - ctx.accounts.lottery_account.total;
+
+        // let winner_ticket =
+        //     Pubkey::find_program_address(&["ticket#".as_ref(), "0".as_ref()], ctx.program_id).0;
+
         Ok(())
     }
 }
@@ -186,7 +196,7 @@ pub struct InitializeDeposit<'info> {
         seeds = ["nolosslottery".as_ref(), signer.key().as_ref()],
         bump,
         payer = signer,
-        space = 8 + 16 + 16
+        space = 8 + 16 + 16 + (4 + 2000 * 4)
     )]
     pub user_deposit_account: Box<Account<'info, UserDeposit>>,
     pub system_program: Program<'info, System>,
@@ -197,6 +207,7 @@ pub struct InitializeDeposit<'info> {
 pub struct UserDeposit {
     pub bump: u8,
     pub total: u64,
+    pub ticket_ids: Vec<u64>,
 }
 
 #[derive(Accounts)]
@@ -208,12 +219,14 @@ pub struct Deposit<'info> {
     pub destination_collateral_account: Box<Account<'info, TokenAccount>>,
     /// CHECK:
     pub lending_program: AccountInfo<'info>,
+    /// CHECK:
     #[account(mut)]
     pub reserve: AccountInfo<'info>,
+    /// CHECK:
     #[account(mut)]
     pub reserve_liquidity_supply: AccountInfo<'info>,
     #[account(mut)]
-    pub reserve_collateral_mint: AccountInfo<'info>,
+    pub reserve_collateral_mint: Account<'info, Mint>,
     /// CHECK:
     pub lending_market: AccountInfo<'info>,
     /// CHECK:
@@ -228,6 +241,7 @@ pub struct Deposit<'info> {
     pub lottery_account: Box<Account<'info, Lottery>>,
 
     // tickets part
+    #[account(mut)]
     pub sender: Signer<'info>,
     #[account(mut)]
     pub receiver_ticket: Box<Account<'info, TokenAccount>>,
@@ -261,12 +275,14 @@ pub struct Withdraw<'info> {
     pub source_collateral_account: Box<Account<'info, TokenAccount>>,
     /// CHECK:
     pub lending_program: AccountInfo<'info>,
+    /// CHECK:
     #[account(mut)]
     pub reserve: AccountInfo<'info>,
+    /// CHECK:
     #[account(mut)]
     pub reserve_liquidity_supply: AccountInfo<'info>,
     #[account(mut)]
-    pub reserve_collateral_mint: AccountInfo<'info>,
+    pub reserve_collateral_mint: Account<'info, Mint>,
     /// CHECK:
     pub lending_market: AccountInfo<'info>,
     /// CHECK:
@@ -280,6 +296,7 @@ pub struct Withdraw<'info> {
     pub lottery_account: Box<Account<'info, Lottery>>,
 
     // tickets part
+    #[account(mut)]
     pub sender: Signer<'info>,
     #[account(mut)]
     pub sender_ticket: Box<Account<'info, TokenAccount>>,
