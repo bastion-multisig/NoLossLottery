@@ -261,6 +261,16 @@ describe("nolosslottery",  () => {
                 collateralAccount: destinationCollateralAccount_token.address,
             },
         })
+        let lottery_state = await nolosslottery
+            .account.lottery.fetch(lotteryAccount);
+        console.log("Lottery state: ", lottery_state);
+
+        await nolosslottery.rpc.payout({
+            accounts: {
+                winningTicket: lottery_state.winningTicket,
+                lotteryAccount: lotteryAccount,
+            },
+        })
         console.log("Lottery state: ", await nolosslottery
             .account.lottery.fetch(lotteryAccount));
     })

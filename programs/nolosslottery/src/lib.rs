@@ -166,6 +166,16 @@ pub mod nolosslottery {
 
         Ok(())
     }
+
+    pub fn payout(ctx: Context<PayoutInstruction>) -> ProgramResult {
+        let empty_lottery = Lottery::default();
+        ctx.accounts.lottery_account.prize = empty_lottery.prize;
+        ctx.accounts.lottery_account.winning_ticket = empty_lottery.winning_ticket;
+
+        // TODO: send the prize to the winner
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -322,4 +332,13 @@ pub struct LotteryInstruction<'info> {
     pub lottery_account: Account<'info, Lottery>,
     #[account(mut)]
     pub collateral_account: Account<'info, TokenAccount>,
+}
+
+// an instruction to send the prize to the user
+#[derive(Accounts)]
+pub struct PayoutInstruction<'info> {
+    #[account(mut)]
+    pub winning_ticket: Account<'info, Ticket>,
+    #[account(mut)]
+    pub lottery_account: Account<'info, Lottery>,
 }
