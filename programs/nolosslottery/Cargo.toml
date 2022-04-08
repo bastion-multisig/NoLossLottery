@@ -18,4 +18,6 @@ default = []
 [dependencies]
 anchor-lang = "0.23.0"
 anchor-spl = "0.23.0"
+switchboard-v2 = { git = "https://github.com/strange-dv/switchboardv2-rs", version = "0.1.9", features = ["no-entrypoint"] }
+bytemuck = "1.9.1"
 spl-token-lending = { git = "https://github.com/strange-dv/solana-program-library", version = "*", features = ["no-entrypoint"] }

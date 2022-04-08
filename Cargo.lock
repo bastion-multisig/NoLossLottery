@@ -699,7 +699,9 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "bytemuck",
  "spl-token-lending",
+ "switchboard-v2",
 ]
 
 [[package]]
@@ -1146,6 +1148,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
+name = "superslice"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab16ced94dbd8a46c82fd81e3ed9a8727dac2977ea869d217bcc4ea1f122e81f"
+
+[[package]]
 name = "switchboard-program"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1188,6 +1196,19 @@ dependencies = [
  "rust_decimal_macros",
  "solana-program",
  "switchboard-protos",
+]
+
+[[package]]
+name = "switchboard-v2"
+version = "0.1.9"
+source = "git+https://github.com/strange-dv/switchboardv2-rs#621806fe8a88d9bbd5f2137a1f89a3751685cae2"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "bytemuck",
+ "rust_decimal",
+ "solana-program",
+ "superslice",
 ]
 
 [[package]]

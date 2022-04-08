@@ -1,10 +1,15 @@
+pub mod actions;
+pub use actions::*;
+
 use crate::solana_program::entrypoint::ProgramResult;
-use anchor_lang::prelude::*;
+pub use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount};
 use spl_token_lending;
 
 declare_id!("AaN5pQRq3nedSysxKgDYsQNmyARsxn7xqjXifXDW4dSY");
+
+const STATE_SEED: &[u8] = b"STATE";
 
 #[program]
 pub mod nolosslottery {
@@ -148,11 +153,26 @@ pub mod nolosslottery {
         Ok(())
     }
 
+    #[access_control(ctx.accounts.validate(&ctx))]
+    pub fn init_state(ctx: Context<InitState>) -> Result<()> {
+        InitState::actuate(&ctx)
+    }
+
+    #[access_control(ctx.accounts.validate(&ctx, &params))]
+    pub fn update_result(ctx: Context<UpdateResult>, params: UpdateResultParams) -> ProgramResult {
+        UpdateResult::actuate(&ctx, &params)
+    }
+
+    #[access_control(ctx.accounts.validate(&ctx, &params))]
+    pub fn request_result(ctx: Context<RequestResult>, params: RequestResultParams) -> ProgramResult{
+        RequestResult::actuate(&ctx, &params)
+    }
+
     pub fn lottery(ctx: Context<LotteryInstruction>) -> ProgramResult {
         let prize_amount =
             ctx.accounts.collateral_account.amount - ctx.accounts.lottery_account.total;
 
-        // TODO: create a function that generates a random number
+        // TODO: create a function that generates a real random number
         let winning_ticket_id = 0;
 
         let winning_ticket = Pubkey::find_program_address(
@@ -341,4 +361,32 @@ pub struct PayoutInstruction<'info> {
     pub winning_ticket: Account<'info, Ticket>,
     #[account(mut)]
     pub lottery_account: Account<'info, Lottery>,
+}
+
+#[repr(packed)]
+#[account(zero_copy)]
+pub struct VrfClient {
+    pub bump: u8,
+    pub max_result: u64,
+    pub result_buffer: [u8; 32],
+    pub result: u128,
+    pub last_timestamp: i64,
+    pub authority: Pubkey,
+    pub vrf: Pubkey,
+}
+impl Default for VrfClient {
+    fn default() -> Self {
+        unsafe { std::mem::zeroed() }
+    }
+}
+
+#[error_code]
+#[derive(Eq, PartialEq)]
+pub enum VrfErrorCode {
+    #[msg("Not a valid Switchboard VRF account")]
+    InvalidSwitchboardVrfAccount,
+    #[msg("Current round result is empty")]
+    EmptyCurrentRoundResult,
+    #[msg("Invalid authority account provided.")]
+    InvalidAuthorityError,
 }
