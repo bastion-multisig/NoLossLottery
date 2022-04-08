@@ -1,7 +1,7 @@
 use crate::*;
 use anchor_lang;
-pub use switchboard_v2::{VrfAccountData, VrfRequestRandomness};
 use anchor_spl;
+pub use switchboard_v2::{VrfAccountData, VrfRequestRandomness};
 
 #[derive(Accounts)]
 #[instruction(params: RequestResultParams)] // rpc parameters hint

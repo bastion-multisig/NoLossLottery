@@ -5,15 +5,15 @@ use crate::solana_program::entrypoint::ProgramResult;
 pub use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount};
-use spl_token_lending;
 
-declare_id!("AaN5pQRq3nedSysxKgDYsQNmyARsxn7xqjXifXDW4dSY");
+declare_id!("B7P2kCRzUhyMRQtPr6xN3DgJcZVdydoMK59D4rQEBdKB");
 
 const STATE_SEED: &[u8] = b"STATE";
 
 #[program]
 pub mod nolosslottery {
     use super::*;
+    use anchor_lang::AccountsClose;
 
     pub fn init_lottery(ctx: Context<InitializeLottery>, bump: u8) -> ProgramResult {
         ctx.accounts.lottery_account.bump = bump;
@@ -30,6 +30,7 @@ pub mod nolosslottery {
 
     pub fn deposit(ctx: Context<Deposit>) -> ProgramResult {
         // deposit to Solend
+        /*
         solana_program::program::invoke(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
                 *ctx.accounts.lending_program.key,
@@ -61,6 +62,7 @@ pub mod nolosslottery {
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
         )
         .unwrap();
+        */
 
         // mint tickets to user
         token::mint_to(
@@ -97,6 +99,7 @@ pub mod nolosslottery {
 
     pub fn withdraw(ctx: Context<Withdraw>) -> ProgramResult {
         // withdraw from Solend
+        /*
         solana_program::program::invoke(
             &spl_token_lending::instruction::redeem_reserve_collateral(
                 *ctx.accounts.lending_program.key,
@@ -132,6 +135,7 @@ pub mod nolosslottery {
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
         )
         .unwrap();
+         */
 
         // burn user's tickets
         token::burn(
@@ -145,6 +149,22 @@ pub mod nolosslottery {
             ),
             1,
         )?;
+
+        // remove ticket's id from the list of user tickets
+        let ticket_id = ctx.accounts
+            .user_deposit_account
+            .ticket_ids
+            .iter()
+            .position(|&x| x == ctx.accounts.ticket_account.id)
+            .unwrap();
+        ctx.accounts.user_deposit_account.ticket_ids.remove(
+            ticket_id
+        );
+
+        // close user's ticket
+        ctx.accounts
+            .ticket_account
+            .close(ctx.accounts.sender.to_account_info())?;
 
         ctx.accounts.user_deposit_account.total -= 1;
         ctx.accounts.lottery_account.total -= 1;
@@ -164,11 +184,18 @@ pub mod nolosslottery {
     }
 
     #[access_control(ctx.accounts.validate(&ctx, &params))]
-    pub fn request_result(ctx: Context<RequestResult>, params: RequestResultParams) -> ProgramResult{
+    pub fn request_result(
+        ctx: Context<RequestResult>,
+        params: RequestResultParams,
+    ) -> ProgramResult {
         RequestResult::actuate(&ctx, &params)
     }
 
     pub fn lottery(ctx: Context<LotteryInstruction>) -> ProgramResult {
+        if ctx.accounts.lottery_account.total_tickets == 0 {
+            return Ok(());
+        }
+
         let prize_amount =
             ctx.accounts.collateral_account.amount - ctx.accounts.lottery_account.total;
 
@@ -327,6 +354,7 @@ pub struct Withdraw<'info> {
     pub lending_market_authority: AccountInfo<'info>,
     pub transfer_authority: Signer<'info>,
     pub clock: Sysvar<'info, Clock>,
+
     // lottery part
     #[account(mut)]
     pub user_deposit_account: Box<Account<'info, UserDeposit>>,

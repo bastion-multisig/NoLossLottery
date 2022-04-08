@@ -146,6 +146,7 @@ describe("nolosslottery",  () => {
 
         let lottery_state = await nolosslottery
             .account.lottery.fetch(lotteryAccount);
+        console.log("Lottery state: ", lottery_state);
         const [ticketAccount, _ticketAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("ticket#"),
@@ -205,13 +206,13 @@ describe("nolosslottery",  () => {
                 nolosslottery.programId
             );
 
-        let lottery_state = await nolosslottery
-            .account.lottery.fetch(lotteryAccount);
-        const [ticketAccount, _ticketAccountBump] =
+        let user_state = await nolosslottery
+            .account.userDeposit.fetch(userAccount);
+        let [ticketAccount, _ticketAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("ticket#"),
                     anchor.utils.bytes.utf8.encode(
-                        (lottery_state.totalTickets.add(new anchor.BN(-1))).toString())],
+                        user_state.ticketIds.at(0).toString())],
                 nolosslottery.programId
             );
 
@@ -265,13 +266,17 @@ describe("nolosslottery",  () => {
             .account.lottery.fetch(lotteryAccount);
         console.log("Lottery state: ", lottery_state);
 
-        await nolosslottery.rpc.payout({
-            accounts: {
-                winningTicket: lottery_state.winningTicket,
-                lotteryAccount: lotteryAccount,
-            },
-        })
-        console.log("Lottery state: ", await nolosslottery
-            .account.lottery.fetch(lotteryAccount));
+        if (lottery_state.totalTickets.toString() != "0") {
+            console.log("Winning ticket state: ",
+                await nolosslottery.account.ticket.fetch(lottery_state.winningTicket));
+            await nolosslottery.rpc.payout({
+                accounts: {
+                    winningTicket: lottery_state.winningTicket,
+                    lotteryAccount: lotteryAccount,
+                },
+            })
+            console.log("Lottery state: ", await nolosslottery
+                .account.lottery.fetch(lotteryAccount));
+        }
     })
 });
