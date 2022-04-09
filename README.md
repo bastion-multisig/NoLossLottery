@@ -11,17 +11,21 @@ on this amount. Then this % of profit is played
 out among all the users who made a deposit.
 
 ## Endpoints
+1. ### Initialization
+Initializes the user's deposit status
 
-### Initialize
-Initializes user's deposit state
-### Deposit
-Takes the user's deposit, lends it to Solend
-and gives the required number of tickets to the user
-### Withdraw
-Takes the user's deposit from Solend,
-returns it to the user and burns their tickets
-### Lottery
-Main lottery endpoint
+2. ### Deposit
+Accepts the user's deposit, lends it to Solend
+and creates a ticket for the user
+
+3. ### Output
+Takes the user's deposit from Solend, and burns the given ticket
+
+4. ### Lottery
+Selects a random ticket number and saves it as the winner
+
+5. ### Payout
+Creates a ticket for the user, without a deposit in Solend
 
 ## Build, Test and Deploy
 First, install dependencies:
