@@ -6,7 +6,7 @@ pub use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount};
 
-declare_id!("fdfZ2ckFdWWobmLaAdPwoNojFCSSYi2GsbjPvSgjA24");
+declare_id!("9tRS5NBEcfQKsLj526fvMPNEvepPRR5MVGK9YzvLMeP4");
 
 const STATE_SEED: &[u8] = b"STATE";
 
@@ -23,7 +23,6 @@ pub mod nolosslottery {
 
     pub fn init_user_deposit(ctx: Context<InitializeDeposit>, bump: u8) -> ProgramResult {
         ctx.accounts.user_deposit_account.bump = bump;
-        ctx.accounts.user_deposit_account.total = 0;
         ctx.accounts.user_deposit_account.ticket_ids = vec![];
         Ok(())
     }
@@ -78,14 +77,10 @@ pub mod nolosslottery {
         )?;
 
         // change user state
-        ctx.accounts.user_deposit_account.total += 1;
         ctx.accounts
             .user_deposit_account
             .ticket_ids
             .push(ctx.accounts.lottery_account.total_tickets);
-
-        // total tickets count
-        ctx.accounts.lottery_account.total += 1;
 
         // new ticket
         ctx.accounts.ticket_account.id = ctx.accounts.lottery_account.total_tickets;
@@ -151,37 +146,41 @@ pub mod nolosslottery {
         )?;
 
         // remove ticket's id from the list of user tickets
-        let ticket_index = ctx.accounts
+        let ticket_index = ctx
+            .accounts
             .user_deposit_account
             .ticket_ids
             .iter()
             .position(|&x| x == ctx.accounts.ticket_account.id)
             .unwrap();
-        ctx.accounts.user_deposit_account.ticket_ids.remove(
-            ticket_index
-        );
+        ctx.accounts
+            .user_deposit_account
+            .ticket_ids
+            .remove(ticket_index);
 
         if ctx.accounts.last_ticket_account.id == ctx.accounts.ticket_account.id {
             // if we need to delete the last ticket
             // than the users are the same
             // and we need to modify both in order for anchor
             // to be able to save tha changes
-            ctx.accounts.last_ticket_owner_account.ticket_ids.remove(
-                ticket_index
-            );
-            ctx.accounts.last_ticket_owner_account.total -= 1;
+            ctx.accounts
+                .last_ticket_owner_account
+                .ticket_ids
+                .remove(ticket_index);
         } else {
             // if we have two different user
             // then we must change ticket id data
-            let last_ticket_index = ctx.accounts
+            let last_ticket_index = ctx
+                .accounts
                 .last_ticket_owner_account
                 .ticket_ids
                 .iter()
                 .position(|&x| x == ctx.accounts.last_ticket_account.id)
                 .unwrap();
-            ctx.accounts.last_ticket_owner_account.ticket_ids.remove(
-                last_ticket_index
-            );
+            ctx.accounts
+                .last_ticket_owner_account
+                .ticket_ids
+                .remove(last_ticket_index);
 
             ctx.accounts.ticket_account.owner = ctx.accounts.last_ticket_account.owner;
         }
@@ -191,8 +190,6 @@ pub mod nolosslottery {
             .last_ticket_account
             .close(ctx.accounts.sender.to_account_info())?;
 
-        ctx.accounts.user_deposit_account.total -= 1;
-        ctx.accounts.lottery_account.total -= 1;
         ctx.accounts.lottery_account.total_tickets -= 1;
 
         Ok(())
@@ -222,7 +219,7 @@ pub mod nolosslottery {
         }
 
         let prize_amount =
-            ctx.accounts.collateral_account.amount - ctx.accounts.lottery_account.total;
+            ctx.accounts.collateral_account.amount - ctx.accounts.lottery_account.total_tickets;
 
         // TODO: create a function that generates a real random number
         let winning_ticket_id = 0;
@@ -270,7 +267,6 @@ pub struct InitializeLottery<'info> {
 #[derive(Default)]
 pub struct Lottery {
     pub bump: u8,
-    pub total: u64,
     pub total_tickets: u64,
     pub winning_ticket: Pubkey,
     pub prize: u64,
@@ -296,7 +292,6 @@ pub struct InitializeDeposit<'info> {
 #[derive(Default)]
 pub struct UserDeposit {
     pub bump: u8,
-    pub total: u64,
     pub ticket_ids: Vec<u64>,
 }
 
@@ -389,6 +384,7 @@ pub struct Withdraw<'info> {
     pub ticket_account: Box<Account<'info, Ticket>>,
     #[account(mut)]
     pub last_ticket_owner_account: Box<Account<'info, UserDeposit>>,
+    #[account(mut)]
     pub last_ticket_account: Box<Account<'info, Ticket>>,
 
     // tickets part

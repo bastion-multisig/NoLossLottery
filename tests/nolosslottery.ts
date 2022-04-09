@@ -138,7 +138,7 @@ describe("nolosslottery",  () => {
                     payer.publicKey.toBuffer(),],
                 nolosslottery.programId
             );
-        const [lotteryAccount, _lotteryAccountBump] =
+        let [lotteryAccount, _lotteryAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("lottery")],
                 nolosslottery.programId
@@ -147,7 +147,42 @@ describe("nolosslottery",  () => {
         let lottery_state = await nolosslottery
             .account.lottery.fetch(lotteryAccount);
         console.log("Lottery state: ", lottery_state);
-        const [ticketAccount, _ticketAccountBump] =
+        let [ticketAccount, _ticketAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("ticket#"),
+                    anchor.utils.bytes.utf8.encode(lottery_state.totalTickets.toString())],
+                nolosslottery.programId
+            );
+
+        await nolosslottery.rpc.deposit({
+            accounts: {
+                sourceLiquidity: source_token.address,
+                destinationCollateralAccount: destinationCollateralAccount_token.address,
+                lendingProgram: lending_program,
+                lendingMarket: lending_market,
+                reserve: reserve,
+                reserveCollateralMint: reserve_collateral_mint,
+                reserveLiquiditySupply: reserve_liquidity_supply,
+                lendingMarketAuthority: lending_market_authority,
+                transferAuthority: payer.publicKey,
+                clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+
+                userDepositAccount: userAccount,
+                lotteryAccount: lotteryAccount,
+
+                sender: payer.publicKey, // mint authority
+                receiverTicket: receiver_token,
+                ticket: ticket, // mint
+                ticketAccount: ticketAccount,
+                tokenProgram: token.TOKEN_PROGRAM_ID,
+                systemProgram: anchor.web3.SystemProgram.programId,
+            },
+        })
+
+        lottery_state = await nolosslottery
+            .account.lottery.fetch(lotteryAccount);
+        console.log("Lottery state: ", lottery_state);
+        [ticketAccount, _ticketAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("ticket#"),
                     anchor.utils.bytes.utf8.encode(lottery_state.totalTickets.toString())],
