@@ -9,8 +9,6 @@ describe("nolosslottery",  () => {
     anchor.setProvider(provider);
     const nolosslottery = anchor.workspace.Nolosslottery as anchor.Program<Nolosslottery>;
     console.log(nolosslottery.programId.toString())
-    let ticket;
-    let receiver_token;
     let source_token;
     let destinationCollateralAccount_token;
     const payer = anchor.web3.Keypair.fromSecretKey(
@@ -36,20 +34,6 @@ describe("nolosslottery",  () => {
             lending_program
         );
 
-        ticket = await token.createMint(
-            provider.connection,
-            payer, // fee payer
-            payer.publicKey, // mint authority
-            payer.publicKey, // owner
-            0 // decimals
-        );
-
-        receiver_token = await token.createAssociatedTokenAccount(
-            provider.connection,
-            payer, // fee payer
-            ticket, // mint
-            payer.publicKey // owner,
-        );
         destinationCollateralAccount_token =
             await token.getOrCreateAssociatedTokenAccount(
                 provider.connection,
@@ -83,7 +67,6 @@ describe("nolosslottery",  () => {
             [payer]);
 
         console.log("Source Account Balance ", await provider.connection.getTokenAccountBalance(source_token.address))
-        console.log("ACC ", receiver_token)
         console.log("ACC ", destinationCollateralAccount_token)
     });
 
@@ -163,11 +146,9 @@ describe("nolosslottery",  () => {
 
                 userDepositAccount: userAccount,
                 lotteryAccount: lotteryAccount,
+                ticketAccount: ticketAccount,
 
                 sender: payer.publicKey, // mint authority
-                receiverTicket: receiver_token,
-                ticket: ticket, // mint
-                ticketAccount: ticketAccount,
                 tokenProgram: token.TOKEN_PROGRAM_ID,
                 systemProgram: anchor.web3.SystemProgram.programId,
             },
@@ -200,8 +181,6 @@ describe("nolosslottery",  () => {
                 lotteryAccount: lotteryAccount,
 
                 sender: payer.publicKey, // mint authority
-                receiverTicket: receiver_token,
-                ticket: ticket, // mint
                 ticketAccount: ticketAccount,
                 tokenProgram: token.TOKEN_PROGRAM_ID,
                 systemProgram: anchor.web3.SystemProgram.programId,
@@ -210,8 +189,6 @@ describe("nolosslottery",  () => {
 
         console.log("Collateral balance: ", await nolosslottery
             .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address));
-        console.log("User token balance: ", await nolosslottery
-            .provider.connection.getTokenAccountBalance(receiver_token));
         console.log("User SOL balance: ", await nolosslottery
             .provider.connection.getTokenAccountBalance(source_token.address));
         console.log("User deposit state: ", await nolosslottery
@@ -274,15 +251,12 @@ describe("nolosslottery",  () => {
                 lastTicketAccount: lastTicketAccount,
 
                 sender: payer.publicKey, // mint authority
-                senderTicket: receiver_token,
-                ticket: ticket, // mint
                 tokenProgram: token.TOKEN_PROGRAM_ID,
             },
         })
         console.log("Collateral balance: ", await nolosslottery
             .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address));
-        console.log("User token balance: ", await nolosslottery
-            .provider.connection.getTokenAccountBalance(receiver_token));
+        
         console.log("User deposit state: ", await nolosslottery
             .account.userDeposit.fetch(userAccount));
         console.log("Lottery state: ", await nolosslottery
@@ -316,7 +290,7 @@ describe("nolosslottery",  () => {
         if (lottery_state.totalTickets.toString() != "0") {
             console.log("Winning ticket state: ",
                 await nolosslottery.account.ticket.fetch(lottery_state.winningTicket));
-            while (true) {
+            while (lottery_state.prize.gten(1)) {
                 let [ticketAccount, _ticketAccountBump] =
                     await anchor.web3.PublicKey.findProgramAddress(
                         [anchor.utils.bytes.utf8.encode("ticket#"),
@@ -334,9 +308,6 @@ describe("nolosslottery",  () => {
                             ticketAccount: ticketAccount,
 
                             sender: payer.publicKey, // mint authority
-                            receiverTicket: receiver_token,
-                            ticket: ticket, // mint
-                            tokenProgram: token.TOKEN_PROGRAM_ID,
                             systemProgram: anchor.web3.SystemProgram.programId,
                         },
                     })

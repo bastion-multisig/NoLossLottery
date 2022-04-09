@@ -4,7 +4,7 @@ pub use actions::*;
 use crate::solana_program::entrypoint::ProgramResult;
 pub use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
-use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount};
+use anchor_spl::token::{Mint, Token, TokenAccount};
 
 declare_id!("9tRS5NBEcfQKsLj526fvMPNEvepPRR5MVGK9YzvLMeP4");
 
@@ -63,19 +63,6 @@ pub mod nolosslottery {
         .unwrap();
         */
 
-        // mint tickets to user
-        token::mint_to(
-            CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
-                MintTo {
-                    mint: ctx.accounts.ticket.to_account_info(),
-                    to: ctx.accounts.receiver_ticket.to_account_info(),
-                    authority: ctx.accounts.sender.to_account_info(),
-                },
-            ),
-            1,
-        )?;
-
         // change user state
         ctx.accounts
             .user_deposit_account
@@ -131,19 +118,6 @@ pub mod nolosslottery {
         )
         .unwrap();
          */
-
-        // burn user's tickets
-        token::burn(
-            CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
-                Burn {
-                    mint: ctx.accounts.ticket.to_account_info(),
-                    to: ctx.accounts.sender_ticket.to_account_info(),
-                    authority: ctx.accounts.sender.to_account_info(),
-                },
-            ),
-            1,
-        )?;
 
         // remove ticket's id from the list of user tickets
         let ticket_index = ctx
@@ -218,9 +192,13 @@ pub mod nolosslottery {
             return Ok(());
         }
 
-        let prize_amount = (ctx.accounts.collateral_account.amount
-            / ctx.accounts.collateral_mint.decimals as u64)
-            - ctx.accounts.lottery_account.total_tickets;
+        let mut prize_amount = (ctx.accounts.collateral_account.amount as i64
+            / ctx.accounts.collateral_mint.decimals as i64)
+            - ctx.accounts.lottery_account.total_tickets as i64;
+
+        if prize_amount < 1 {
+            prize_amount = 0;
+        }
 
         // TODO: create a function that generates a real random number
         let winning_ticket_id = 0;
@@ -232,7 +210,7 @@ pub mod nolosslottery {
         .0;
 
         ctx.accounts.lottery_account.winning_ticket = winning_ticket;
-        ctx.accounts.lottery_account.prize = prize_amount;
+        ctx.accounts.lottery_account.prize = prize_amount as u64;
 
         Ok(())
     }
@@ -243,19 +221,6 @@ pub mod nolosslottery {
             return err!(LotteryErrorCode::EmptyPrize);
         }
         ctx.accounts.lottery_account.prize -= 1;
-
-        // mint tickets to user
-        token::mint_to(
-            CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
-                MintTo {
-                    mint: ctx.accounts.ticket.to_account_info(),
-                    to: ctx.accounts.receiver_ticket.to_account_info(),
-                    authority: ctx.accounts.sender.to_account_info(),
-                },
-            ),
-            1,
-        )?;
 
         // change user state
         ctx.accounts
@@ -351,14 +316,6 @@ pub struct Deposit<'info> {
     pub user_deposit_account: Box<Account<'info, UserDeposit>>,
     #[account(mut)]
     pub lottery_account: Box<Account<'info, Lottery>>,
-
-    // tickets part
-    #[account(mut)]
-    pub sender: Signer<'info>,
-    #[account(mut)]
-    pub receiver_ticket: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    pub ticket: Box<Account<'info, Mint>>,
     #[account(
         init,
         payer = sender,
@@ -367,6 +324,10 @@ pub struct Deposit<'info> {
         bump
     )]
     pub ticket_account: Box<Account<'info, Ticket>>,
+
+    // authority part
+    #[account(mut)]
+    pub sender: Signer<'info>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
@@ -414,13 +375,9 @@ pub struct Withdraw<'info> {
     #[account(mut)]
     pub last_ticket_account: Box<Account<'info, Ticket>>,
 
-    // tickets part
+    // authority part
     #[account(mut)]
     pub sender: Signer<'info>,
-    #[account(mut)]
-    pub sender_ticket: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    pub ticket: Box<Account<'info, Mint>>,
     pub token_program: Program<'info, Token>,
 }
 
@@ -447,10 +404,6 @@ pub struct PayoutInstruction<'info> {
     // tickets part
     #[account(mut)]
     pub sender: Signer<'info>,
-    #[account(mut)]
-    pub receiver_ticket: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    pub ticket: Box<Account<'info, Mint>>,
     #[account(
         init,
         payer = sender,
@@ -459,7 +412,6 @@ pub struct PayoutInstruction<'info> {
         bump
     )]
     pub ticket_account: Box<Account<'info, Ticket>>,
-    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 
     #[account(mut)]
