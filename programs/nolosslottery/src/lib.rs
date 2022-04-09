@@ -6,7 +6,7 @@ pub use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount};
 
-declare_id!("B7P2kCRzUhyMRQtPr6xN3DgJcZVdydoMK59D4rQEBdKB");
+declare_id!("fdfZ2ckFdWWobmLaAdPwoNojFCSSYi2GsbjPvSgjA24");
 
 const STATE_SEED: &[u8] = b"STATE";
 
@@ -151,19 +151,44 @@ pub mod nolosslottery {
         )?;
 
         // remove ticket's id from the list of user tickets
-        let ticket_id = ctx.accounts
+        let ticket_index = ctx.accounts
             .user_deposit_account
             .ticket_ids
             .iter()
             .position(|&x| x == ctx.accounts.ticket_account.id)
             .unwrap();
         ctx.accounts.user_deposit_account.ticket_ids.remove(
-            ticket_id
+            ticket_index
         );
+
+        if ctx.accounts.last_ticket_account.id == ctx.accounts.ticket_account.id {
+            // if we need to delete the last ticket
+            // than the users are the same
+            // and we need to modify both in order for anchor
+            // to be able to save tha changes
+            ctx.accounts.last_ticket_owner_account.ticket_ids.remove(
+                ticket_index
+            );
+            ctx.accounts.last_ticket_owner_account.total -= 1;
+        } else {
+            // if we have two different user
+            // then we must change ticket id data
+            let last_ticket_index = ctx.accounts
+                .last_ticket_owner_account
+                .ticket_ids
+                .iter()
+                .position(|&x| x == ctx.accounts.last_ticket_account.id)
+                .unwrap();
+            ctx.accounts.last_ticket_owner_account.ticket_ids.remove(
+                last_ticket_index
+            );
+
+            ctx.accounts.ticket_account.owner = ctx.accounts.last_ticket_account.owner;
+        }
 
         // close user's ticket
         ctx.accounts
-            .ticket_account
+            .last_ticket_account
             .close(ctx.accounts.sender.to_account_info())?;
 
         ctx.accounts.user_deposit_account.total -= 1;
@@ -357,9 +382,14 @@ pub struct Withdraw<'info> {
 
     // lottery part
     #[account(mut)]
+    pub lottery_account: Box<Account<'info, Lottery>>,
+    #[account(mut)]
     pub user_deposit_account: Box<Account<'info, UserDeposit>>,
     #[account(mut)]
-    pub lottery_account: Box<Account<'info, Lottery>>,
+    pub ticket_account: Box<Account<'info, Ticket>>,
+    #[account(mut)]
+    pub last_ticket_owner_account: Box<Account<'info, UserDeposit>>,
+    pub last_ticket_account: Box<Account<'info, Ticket>>,
 
     // tickets part
     #[account(mut)]
@@ -368,8 +398,6 @@ pub struct Withdraw<'info> {
     pub sender_ticket: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub ticket: Box<Account<'info, Mint>>,
-    #[account(mut)]
-    pub ticket_account: Box<Account<'info, Ticket>>,
     pub token_program: Program<'info, Token>,
 }
 

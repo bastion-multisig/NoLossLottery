@@ -205,6 +205,7 @@ describe("nolosslottery",  () => {
                 [anchor.utils.bytes.utf8.encode("lottery")],
                 nolosslottery.programId
             );
+        let lottery_state = await nolosslottery.account.lottery.fetch(lotteryAccount);
 
         let user_state = await nolosslottery
             .account.userDeposit.fetch(userAccount);
@@ -215,6 +216,14 @@ describe("nolosslottery",  () => {
                         user_state.ticketIds.at(0).toString())],
                 nolosslottery.programId
             );
+        let [lastTicketAccount, _lastTicketAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("ticket#"),
+                    anchor.utils.bytes.utf8.encode(
+                        lottery_state.totalTickets.add(new anchor.BN(-1)).toString())],
+                nolosslottery.programId
+            );
+        let lastTicketOwnerAccount = (await nolosslottery.account.ticket.fetch(lastTicketAccount)).owner
 
         await nolosslottery.rpc.withdraw({
             accounts: {
@@ -228,10 +237,12 @@ describe("nolosslottery",  () => {
                 lendingMarketAuthority: lending_market_authority,
                 transferAuthority: payer.publicKey,
                 clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
-                ticketAccount: ticketAccount,
 
-                userDepositAccount: userAccount,
                 lotteryAccount: lotteryAccount,
+                userDepositAccount: userAccount,
+                ticketAccount: ticketAccount,
+                lastTicketOwnerAccount: lastTicketOwnerAccount,
+                lastTicketAccount: lastTicketAccount,
 
                 sender: payer.publicKey, // mint authority
                 senderTicket: receiver_token,
