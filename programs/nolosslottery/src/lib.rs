@@ -218,8 +218,9 @@ pub mod nolosslottery {
             return Ok(());
         }
 
-        let prize_amount =
-            ctx.accounts.collateral_account.amount - ctx.accounts.lottery_account.total_tickets;
+        let prize_amount = (ctx.accounts.collateral_account.amount
+            / ctx.accounts.collateral_mint.decimals as u64)
+            - ctx.accounts.lottery_account.total_tickets;
 
         // TODO: create a function that generates a real random number
         let winning_ticket_id = 0;
@@ -236,12 +237,38 @@ pub mod nolosslottery {
         Ok(())
     }
 
-    pub fn payout(ctx: Context<PayoutInstruction>) -> ProgramResult {
-        let empty_lottery = Lottery::default();
-        ctx.accounts.lottery_account.prize = empty_lottery.prize;
-        ctx.accounts.lottery_account.winning_ticket = empty_lottery.winning_ticket;
+    pub fn payout(ctx: Context<PayoutInstruction>) -> Result<()> {
+        if ctx.accounts.lottery_account.prize < 1 {
+            ctx.accounts.lottery_account.winning_ticket = Pubkey::default();
+            return err!(LotteryErrorCode::EmptyPrize);
+        }
+        ctx.accounts.lottery_account.prize -= 1;
 
-        // TODO: send the prize to the winner
+        // mint tickets to user
+        token::mint_to(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                MintTo {
+                    mint: ctx.accounts.ticket.to_account_info(),
+                    to: ctx.accounts.receiver_ticket.to_account_info(),
+                    authority: ctx.accounts.sender.to_account_info(),
+                },
+            ),
+            1,
+        )?;
+
+        // change user state
+        ctx.accounts
+            .user_deposit_account
+            .ticket_ids
+            .push(ctx.accounts.lottery_account.total_tickets);
+
+        // new ticket
+        ctx.accounts.ticket_account.id = ctx.accounts.lottery_account.total_tickets;
+        ctx.accounts.ticket_account.owner = ctx.accounts.user_deposit_account.key();
+
+        // count the ticket
+        ctx.accounts.lottery_account.total_tickets += 1;
 
         Ok(())
     }
@@ -403,16 +430,40 @@ pub struct LotteryInstruction<'info> {
     #[account(mut)]
     pub lottery_account: Account<'info, Lottery>,
     #[account(mut)]
+    pub collateral_mint: Account<'info, Mint>,
+    #[account(mut)]
     pub collateral_account: Account<'info, TokenAccount>,
 }
 
 // an instruction to send the prize to the user
 #[derive(Accounts)]
 pub struct PayoutInstruction<'info> {
+    // lottery part
+    #[account(mut)]
+    pub user_deposit_account: Box<Account<'info, UserDeposit>>,
+    #[account(mut)]
+    pub lottery_account: Box<Account<'info, Lottery>>,
+
+    // tickets part
+    #[account(mut)]
+    pub sender: Signer<'info>,
+    #[account(mut)]
+    pub receiver_ticket: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub ticket: Box<Account<'info, Mint>>,
+    #[account(
+        init,
+        payer = sender,
+        space = 8 + 16 + 32,
+        seeds = ["ticket#".as_ref(), lottery_account.total_tickets.to_string().as_ref()],
+        bump
+    )]
+    pub ticket_account: Box<Account<'info, Ticket>>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+
     #[account(mut)]
     pub winning_ticket: Account<'info, Ticket>,
-    #[account(mut)]
-    pub lottery_account: Account<'info, Lottery>,
 }
 
 #[repr(packed)]
@@ -437,8 +488,10 @@ impl Default for VrfClient {
 pub enum VrfErrorCode {
     #[msg("Not a valid Switchboard VRF account")]
     InvalidSwitchboardVrfAccount,
-    #[msg("Current round result is empty")]
-    EmptyCurrentRoundResult,
-    #[msg("Invalid authority account provided.")]
-    InvalidAuthorityError,
+}
+
+#[error_code]
+pub enum LotteryErrorCode {
+    #[msg("Empty prize")]
+    EmptyPrize,
 }

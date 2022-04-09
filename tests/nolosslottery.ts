@@ -105,9 +105,6 @@ describe("nolosslottery",  () => {
                         systemProgram: anchor.web3.SystemProgram.programId,
                     },
                 });
-
-            const userState = await nolosslottery.account.userDeposit.fetch(userAccount);
-            assert.ok(userState.total.toString() == "0");
         } catch (e) { } // already initialized
 
         const [lotteryAccount, lotteryAccountBump] =
@@ -125,9 +122,6 @@ describe("nolosslottery",  () => {
                         systemProgram: anchor.web3.SystemProgram.programId,
                     },
                 });
-
-            const lotteryState = await nolosslottery.account.userDeposit.fetch(lotteryAccount);
-            assert.ok(lotteryState.total.toString() == "0");
         } catch (e) { } // already initialized
     });
 
@@ -305,22 +299,53 @@ describe("nolosslottery",  () => {
         await nolosslottery.rpc.lottery({
             accounts: {
                 lotteryAccount: lotteryAccount,
+                collateralMint: new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf"), // mint
                 collateralAccount: destinationCollateralAccount_token.address,
             },
         })
         let lottery_state = await nolosslottery
             .account.lottery.fetch(lotteryAccount);
         console.log("Lottery state: ", lottery_state);
+        const [userAccount, _userAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                    payer.publicKey.toBuffer(),],
+                nolosslottery.programId
+            );
 
         if (lottery_state.totalTickets.toString() != "0") {
             console.log("Winning ticket state: ",
                 await nolosslottery.account.ticket.fetch(lottery_state.winningTicket));
-            await nolosslottery.rpc.payout({
-                accounts: {
-                    winningTicket: lottery_state.winningTicket,
-                    lotteryAccount: lotteryAccount,
-                },
-            })
+            while (true) {
+                let [ticketAccount, _ticketAccountBump] =
+                    await anchor.web3.PublicKey.findProgramAddress(
+                        [anchor.utils.bytes.utf8.encode("ticket#"),
+                            anchor.utils.bytes.utf8.encode(lottery_state.totalTickets.toString())],
+                        nolosslottery.programId
+                    );
+
+                try {
+                    await nolosslottery.rpc.payout({
+                        accounts: {
+                            winningTicket: lottery_state.winningTicket,
+                            lotteryAccount: lotteryAccount,
+
+                            userDepositAccount: userAccount,
+                            ticketAccount: ticketAccount,
+
+                            sender: payer.publicKey, // mint authority
+                            receiverTicket: receiver_token,
+                            ticket: ticket, // mint
+                            tokenProgram: token.TOKEN_PROGRAM_ID,
+                            systemProgram: anchor.web3.SystemProgram.programId,
+                        },
+                    })
+                    lottery_state = await nolosslottery
+                        .account.lottery.fetch(lotteryAccount);
+                } catch (e) {
+                    break;
+                }
+            }
             console.log("Lottery state: ", await nolosslottery
                 .account.lottery.fetch(lotteryAccount));
         }
