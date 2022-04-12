@@ -6,7 +6,7 @@ pub use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
-declare_id!("9tRS5NBEcfQKsLj526fvMPNEvepPRR5MVGK9YzvLMeP4");
+declare_id!("73G1zryheReFgE4gsJyRVnE9g1SpyX13uXmSLwGrY9bS");
 
 const STATE_SEED: &[u8] = b"STATE";
 
@@ -29,7 +29,27 @@ pub mod nolosslottery {
 
     pub fn deposit(ctx: Context<Deposit>) -> ProgramResult {
         // deposit to Solend
-        /*
+        solana_program::program::invoke(
+            &spl_token::instruction::approve(
+                &ctx.accounts.token_program.to_account_info().key.clone(),
+                &ctx.accounts.source_liquidity.to_account_info().key.clone(),
+                &ctx.accounts
+                    .lending_program
+                    .to_account_info()
+                    .key
+                    .clone(),
+                &ctx.accounts
+                    .transfer_authority
+                    .to_account_info()
+                    .key
+                    .clone(),
+                &[],
+                1
+            )?,
+            ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
+        )
+        .unwrap();
+        
         solana_program::program::invoke(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
                 *ctx.accounts.lending_program.key,
@@ -61,7 +81,6 @@ pub mod nolosslottery {
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
         )
         .unwrap();
-        */
 
         // change user state
         ctx.accounts
@@ -81,7 +100,6 @@ pub mod nolosslottery {
 
     pub fn withdraw(ctx: Context<Withdraw>) -> ProgramResult {
         // withdraw from Solend
-        /*
         solana_program::program::invoke(
             &spl_token_lending::instruction::redeem_reserve_collateral(
                 *ctx.accounts.lending_program.key,
@@ -117,7 +135,6 @@ pub mod nolosslottery {
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
         )
         .unwrap();
-         */
 
         // remove ticket's id from the list of user tickets
         let ticket_index = ctx
