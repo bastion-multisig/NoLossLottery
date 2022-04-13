@@ -700,6 +700,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
+ "spl-token",
  "spl-token-lending",
  "switchboard-v2",
 ]

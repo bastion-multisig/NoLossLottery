@@ -2,18 +2,19 @@ pub mod actions;
 pub use actions::*;
 
 use crate::solana_program::entrypoint::ProgramResult;
+use crate::solana_program::native_token::LAMPORTS_PER_SOL;
 pub use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
+use anchor_lang::AccountsClose;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
-declare_id!("9tRS5NBEcfQKsLj526fvMPNEvepPRR5MVGK9YzvLMeP4");
+declare_id!("ACqyU5JmS1a7qWTCP9ckoG7A1GXFofS52nuoiq7bq4JF");
 
 const STATE_SEED: &[u8] = b"STATE";
 
 #[program]
 pub mod nolosslottery {
     use super::*;
-    use anchor_lang::AccountsClose;
 
     pub fn init_lottery(ctx: Context<InitializeLottery>, bump: u8) -> ProgramResult {
         ctx.accounts.lottery_account.bump = bump;
@@ -29,11 +30,27 @@ pub mod nolosslottery {
 
     pub fn deposit(ctx: Context<Deposit>) -> ProgramResult {
         // deposit to Solend
-        /*
+        solana_program::program::invoke(
+            &spl_token::instruction::approve(
+                &ctx.accounts.token_program.to_account_info().key.clone(),
+                &ctx.accounts.source_liquidity.to_account_info().key.clone(),
+                &ctx.accounts.lending_program.to_account_info().key.clone(),
+                &ctx.accounts
+                    .transfer_authority
+                    .to_account_info()
+                    .key
+                    .clone(),
+                &[],
+                LAMPORTS_PER_SOL
+            )?,
+            ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
+        )
+        .unwrap();
+
         solana_program::program::invoke(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
                 *ctx.accounts.lending_program.key,
-                1,
+                LAMPORTS_PER_SOL,
                 ctx.accounts.source_liquidity.to_account_info().key.clone(),
                 ctx.accounts
                     .destination_collateral_account
@@ -61,7 +78,6 @@ pub mod nolosslottery {
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
         )
         .unwrap();
-        */
 
         // change user state
         ctx.accounts
@@ -81,11 +97,10 @@ pub mod nolosslottery {
 
     pub fn withdraw(ctx: Context<Withdraw>) -> ProgramResult {
         // withdraw from Solend
-        /*
         solana_program::program::invoke(
             &spl_token_lending::instruction::redeem_reserve_collateral(
                 *ctx.accounts.lending_program.key,
-                1,
+                1 * (10_u64.pow(ctx.accounts.reserve_collateral_mint.decimals as u32)),
                 ctx.accounts
                     .source_collateral_account
                     .to_account_info()
@@ -117,7 +132,6 @@ pub mod nolosslottery {
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
         )
         .unwrap();
-         */
 
         // remove ticket's id from the list of user tickets
         let ticket_index = ctx
@@ -248,7 +262,7 @@ pub struct InitializeLottery<'info> {
         seeds = ["lottery".as_ref()],
         bump,
         payer = signer,
-        space = 8 + 16 + 16 + 16 + 32 + 16
+        space = 104 // 8 + 16 + 16 + 16 + 32 + 16
     )]
     pub lottery_account: Box<Account<'info, Lottery>>,
     pub system_program: Program<'info, System>,
@@ -274,7 +288,7 @@ pub struct InitializeDeposit<'info> {
         seeds = ["nolosslottery".as_ref(), signer.key().as_ref()],
         bump,
         payer = signer,
-        space = 8 + 16 + 16 + (4 + 2000 * 4)
+        space = 8044 // 8 + 16 + 16 + (4 + 2000 * 4)
     )]
     pub user_deposit_account: Box<Account<'info, UserDeposit>>,
     pub system_program: Program<'info, System>,
@@ -319,7 +333,7 @@ pub struct Deposit<'info> {
     #[account(
         init,
         payer = sender,
-        space = 8 + 16 + 32,
+        space = 56, // 8 + 16 + 32,
         seeds = ["ticket#".as_ref(), lottery_account.total_tickets.to_string().as_ref()],
         bump
     )]
@@ -407,7 +421,7 @@ pub struct PayoutInstruction<'info> {
     #[account(
         init,
         payer = sender,
-        space = 8 + 16 + 32,
+        space = 56, // 8 + 16 + 32,
         seeds = ["ticket#".as_ref(), lottery_account.total_tickets.to_string().as_ref()],
         bump
     )]
