@@ -3,6 +3,7 @@ import * as anchor from "@project-serum/anchor";
 import { Nolosslottery } from "../target/types/nolosslottery";
 import process from "process";
 import * as assert from "assert";
+import 'core-js/features/array/at';
 
 describe("nolosslottery",  () => {
     const provider = anchor.Provider.env();
@@ -262,7 +263,7 @@ describe("nolosslottery",  () => {
         console.log("Lottery state: ", await nolosslottery
             .account.lottery.fetch(lotteryAccount));
     })
-
+/*
     it('Raffles', async () => {
         const [lotteryAccount, _lotteryAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
@@ -321,4 +322,5 @@ describe("nolosslottery",  () => {
                 .account.lottery.fetch(lotteryAccount));
         }
     })
+*/
 });

@@ -6,7 +6,7 @@ pub use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
-declare_id!("73G1zryheReFgE4gsJyRVnE9g1SpyX13uXmSLwGrY9bS");
+declare_id!("ACqyU5JmS1a7qWTCP9ckoG7A1GXFofS52nuoiq7bq4JF");
 
 const STATE_SEED: &[u8] = b"STATE";
 
@@ -44,7 +44,7 @@ pub mod nolosslottery {
                     .key
                     .clone(),
                 &[],
-                1
+                10000000
             )?,
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
         )
@@ -53,7 +53,7 @@ pub mod nolosslottery {
         solana_program::program::invoke(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
                 *ctx.accounts.lending_program.key,
-                1,
+                10000000,
                 ctx.accounts.source_liquidity.to_account_info().key.clone(),
                 ctx.accounts
                     .destination_collateral_account
@@ -103,7 +103,7 @@ pub mod nolosslottery {
         solana_program::program::invoke(
             &spl_token_lending::instruction::redeem_reserve_collateral(
                 *ctx.accounts.lending_program.key,
-                1,
+                10000000,
                 ctx.accounts
                     .source_collateral_account
                     .to_account_info()
@@ -265,7 +265,7 @@ pub struct InitializeLottery<'info> {
         seeds = ["lottery".as_ref()],
         bump,
         payer = signer,
-        space = 8 + 16 + 16 + 16 + 32 + 16
+        space = 104 // 8 + 16 + 16 + 16 + 32 + 16
     )]
     pub lottery_account: Box<Account<'info, Lottery>>,
     pub system_program: Program<'info, System>,
@@ -291,7 +291,7 @@ pub struct InitializeDeposit<'info> {
         seeds = ["nolosslottery".as_ref(), signer.key().as_ref()],
         bump,
         payer = signer,
-        space = 8 + 16 + 16 + (4 + 2000 * 4)
+        space = 8044 // 8 + 16 + 16 + (4 + 2000 * 4)
     )]
     pub user_deposit_account: Box<Account<'info, UserDeposit>>,
     pub system_program: Program<'info, System>,
@@ -336,7 +336,7 @@ pub struct Deposit<'info> {
     #[account(
         init,
         payer = sender,
-        space = 8 + 16 + 32,
+        space = 56, // 8 + 16 + 32,
         seeds = ["ticket#".as_ref(), lottery_account.total_tickets.to_string().as_ref()],
         bump
     )]
@@ -424,7 +424,7 @@ pub struct PayoutInstruction<'info> {
     #[account(
         init,
         payer = sender,
-        space = 8 + 16 + 32,
+        space = 56, // 8 + 16 + 32,
         seeds = ["ticket#".as_ref(), lottery_account.total_tickets.to_string().as_ref()],
         bump
     )]
