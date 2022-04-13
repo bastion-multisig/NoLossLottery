@@ -2,8 +2,10 @@ pub mod actions;
 pub use actions::*;
 
 use crate::solana_program::entrypoint::ProgramResult;
+use crate::solana_program::native_token::LAMPORTS_PER_SOL;
 pub use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
+use anchor_lang::AccountsClose;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
 declare_id!("ACqyU5JmS1a7qWTCP9ckoG7A1GXFofS52nuoiq7bq4JF");
@@ -13,7 +15,6 @@ const STATE_SEED: &[u8] = b"STATE";
 #[program]
 pub mod nolosslottery {
     use super::*;
-    use anchor_lang::AccountsClose;
 
     pub fn init_lottery(ctx: Context<InitializeLottery>, bump: u8) -> ProgramResult {
         ctx.accounts.lottery_account.bump = bump;
@@ -33,27 +34,23 @@ pub mod nolosslottery {
             &spl_token::instruction::approve(
                 &ctx.accounts.token_program.to_account_info().key.clone(),
                 &ctx.accounts.source_liquidity.to_account_info().key.clone(),
-                &ctx.accounts
-                    .lending_program
-                    .to_account_info()
-                    .key
-                    .clone(),
+                &ctx.accounts.lending_program.to_account_info().key.clone(),
                 &ctx.accounts
                     .transfer_authority
                     .to_account_info()
                     .key
                     .clone(),
                 &[],
-                10000000
+                LAMPORTS_PER_SOL
             )?,
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
         )
         .unwrap();
-        
+
         solana_program::program::invoke(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
                 *ctx.accounts.lending_program.key,
-                10000000,
+                LAMPORTS_PER_SOL,
                 ctx.accounts.source_liquidity.to_account_info().key.clone(),
                 ctx.accounts
                     .destination_collateral_account
@@ -103,7 +100,7 @@ pub mod nolosslottery {
         solana_program::program::invoke(
             &spl_token_lending::instruction::redeem_reserve_collateral(
                 *ctx.accounts.lending_program.key,
-                10000000,
+                1 * (10_u64.pow(ctx.accounts.reserve_collateral_mint.decimals as u32)),
                 ctx.accounts
                     .source_collateral_account
                     .to_account_info()

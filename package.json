@@ -3,6 +3,7 @@
         "@project-serum/anchor": "^0.18.2",
         "@solana/spl-token": "^0.2.0",
         "@switchboard-xyz/switchboard-v2": "^0.0.72",
+        "@solendprotocol/solend-sdk": "*",
         "core-js": "^3.21.1"
     },
     "devDependencies": {
