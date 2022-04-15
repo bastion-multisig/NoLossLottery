@@ -76,5 +76,5 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
     })
 
     console.log("Prize: ", lottery_state.prize.toString())
-    console.log(`TX: https://explorer.solana.com/address/${tx}?cluster=devnet`)
+    console.log(`TX: https://explorer.solana.com/tx/${tx}?cluster=devnet`)
 };

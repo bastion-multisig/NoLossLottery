@@ -56,5 +56,5 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
     console.log("Winner: ", ticket.owner.toJSON());
     console.log("Prize: ", lottery_state.prize.toString(), "tickets");
 
-    console.log(`TX: https://explorer.solana.com/address/${tx}?cluster=devnet`)
+    console.log(`TX: https://explorer.solana.com/tx/${tx}?cluster=devnet`)
 };

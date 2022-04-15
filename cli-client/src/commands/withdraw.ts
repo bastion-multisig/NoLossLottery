@@ -117,5 +117,5 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
         .provider.connection.getTokenAccountBalance(sourceCollateralAccount)).value.uiAmount);
     console.log("User SOL balance: ", (await nolosslottery
         .provider.connection.getTokenAccountBalance(destinationLiquidityAccount.address)).value.uiAmount);
-    console.log(`TX: https://explorer.solana.com/address/${tx}?cluster=devnet`)
+    console.log(`TX: https://explorer.solana.com/tx/${tx}?cluster=devnet`)
 };
