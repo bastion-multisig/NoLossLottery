@@ -207,11 +207,12 @@ pub mod nolosslottery {
         }
 
         let mut prize_amount = (ctx.accounts.collateral_account.amount as i64
-            / ctx.accounts.collateral_mint.decimals as i64)
-            - ctx.accounts.lottery_account.total_tickets as i64;
+            / 10_i64.pow(ctx.accounts.collateral_mint.decimals as u32)
+            - ctx.accounts.lottery_account.total_tickets as i64);
 
         if prize_amount < 1 {
-            prize_amount = 0;
+            ctx.accounts.lottery_account.prize = 0;
+            return Ok(());
         }
 
         // TODO: create a function that generates a real random number
