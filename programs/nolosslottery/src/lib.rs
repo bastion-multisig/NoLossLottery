@@ -11,6 +11,8 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 declare_id!("ACqyU5JmS1a7qWTCP9ckoG7A1GXFofS52nuoiq7bq4JF");
 
 const STATE_SEED: &[u8] = b"STATE";
+const TICKET_PRICE: u64 = (0.1 * LAMPORTS_PER_SOL as f64) as u64;
+const TICKET_PRICE_IN_COLLATERAL: u64 = (0.1 * 1_000_000_000_f64) as u64;
 
 #[program]
 pub mod nolosslottery {
@@ -41,7 +43,7 @@ pub mod nolosslottery {
                     .key
                     .clone(),
                 &[],
-                LAMPORTS_PER_SOL
+                TICKET_PRICE
             )?,
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
         )
@@ -50,7 +52,7 @@ pub mod nolosslottery {
         solana_program::program::invoke(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
                 *ctx.accounts.lending_program.key,
-                LAMPORTS_PER_SOL,
+                TICKET_PRICE,
                 ctx.accounts.source_liquidity.to_account_info().key.clone(),
                 ctx.accounts
                     .destination_collateral_account
@@ -100,7 +102,7 @@ pub mod nolosslottery {
         solana_program::program::invoke(
             &spl_token_lending::instruction::redeem_reserve_collateral(
                 *ctx.accounts.lending_program.key,
-                1 * (10_u64.pow(ctx.accounts.reserve_collateral_mint.decimals as u32)),
+                TICKET_PRICE_IN_COLLATERAL,
                 ctx.accounts
                     .source_collateral_account
                     .to_account_info()
@@ -206,9 +208,10 @@ pub mod nolosslottery {
             return Ok(());
         }
 
-        let mut prize_amount = (ctx.accounts.collateral_account.amount as i64
-            / 10_i64.pow(ctx.accounts.collateral_mint.decimals as u32)
-            - ctx.accounts.lottery_account.total_tickets as i64);
+        let mut prize_amount =
+            ctx.accounts.collateral_account.amount as i64
+            / TICKET_PRICE_IN_COLLATERAL as i64
+            - ctx.accounts.lottery_account.total_tickets as i64;
 
         if prize_amount < 1 {
             ctx.accounts.lottery_account.prize = 0;
