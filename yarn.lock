@@ -254,7 +254,7 @@
     superstruct "^0.14.2"
     tweetnacl "^1.0.0"
 
-"@solendprotocol/solend-sdk@":
+"@solendprotocol/solend-sdk@*":
   version "0.5.5"
   resolved "https://registry.yarnpkg.com/@solendprotocol/solend-sdk/-/solend-sdk-0.5.5.tgz#a8077532e1ca2ecd7d619fee4f339cd6b33e4a04"
   integrity sha512-7eZSM/vl7Bijbg3n/vnO4z5p3VX7eb453pKkVeiT6FmQuC403GrNU3wUz3TVJZlzhsg76X81udK2qZaOKaWrZQ==

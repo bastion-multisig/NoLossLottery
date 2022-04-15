@@ -41,7 +41,6 @@ const builder = (yargs) => yargs
     .positional('key', { type: 'string', demandOption: true });
 exports.builder = builder;
 const handler = (argv) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     const payer = anchor.web3.Keypair.fromSecretKey(Buffer.from(JSON.parse(require("fs").readFileSync(argv.key, {
         encoding: "utf-8",
     }))));
@@ -53,29 +52,25 @@ const handler = (argv) => __awaiter(void 0, void 0, void 0, function* () {
     const reserve_collateral_mint = new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf");
     const reserve_liquidity_supply = new anchor.web3.PublicKey("furd3XUtjXZ2gRvSsoUts9A5m8cMJNqdsyR2Rt8vY9s");
     const lending_market = new anchor.web3.PublicKey("GvjoVKNjBvQcFaSKUW1gTE7DxhSpjHbE69umVR5nPuQp");
-    const sourceCollateralAccount = new anchor.web3.PublicKey("9wBciX5pXv7ttGiHYtuaLAJGnFbLe7JjUtR4ZL4QdC4Z");
+    const destinationCollateralAccount = new anchor.web3.PublicKey("9wBciX5pXv7ttGiHYtuaLAJGnFbLe7JjUtR4ZL4QdC4Z");
     const [lending_market_authority, lending_market_authority_bump] = yield anchor.web3.PublicKey.findProgramAddress([lending_market.toBuffer()], lending_program);
-    const destinationLiquidityAccount = yield token.getOrCreateAssociatedTokenAccount(provider.connection, payer, token.NATIVE_MINT, payer.publicKey);
+    const sourceLiquidityAccount = yield token.getOrCreateAssociatedTokenAccount(provider.connection, payer, token.NATIVE_MINT, payer.publicKey);
     console.log("Collateral balance: ", (yield nolosslottery
-        .provider.connection.getTokenAccountBalance(sourceCollateralAccount)).value.uiAmount);
+        .provider.connection.getTokenAccountBalance(destinationCollateralAccount)).value.uiAmount);
     console.log("User SOL balance: ", (yield nolosslottery
-        .provider.connection.getTokenAccountBalance(destinationLiquidityAccount.address)).value.uiAmount);
+        .provider.connection.getTokenAccountBalance(sourceLiquidityAccount.address)).value.uiAmount);
     const [userAccount, _userAccountBump] = yield anchor.web3.PublicKey.findProgramAddress([anchor.utils.bytes.utf8.encode("nolosslottery"),
         payer.publicKey.toBuffer(),], nolosslottery.programId);
     let [lotteryAccount, _lotteryAccountBump] = yield anchor.web3.PublicKey.findProgramAddress([anchor.utils.bytes.utf8.encode("lottery")], nolosslottery.programId);
     let lottery_state = yield nolosslottery
         .account.lottery.fetch(lotteryAccount);
-    let user_state = yield nolosslottery.account.userDeposit.fetch(userAccount);
     let [ticketAccount, _ticketAccountBump] = yield anchor.web3.PublicKey.findProgramAddress([anchor.utils.bytes.utf8.encode("ticket#"),
-        anchor.utils.bytes.utf8.encode(((_a = user_state.ticketIds.at(0)) !== null && _a !== void 0 ? _a : new anchor.BN(0)).toString())], nolosslottery.programId);
-    let [lastTicketAccount, _lastTicketAccountBump] = yield anchor.web3.PublicKey.findProgramAddress([anchor.utils.bytes.utf8.encode("ticket#"),
-        anchor.utils.bytes.utf8.encode(lottery_state.totalTickets.add(new anchor.BN(-1)).toString())], nolosslottery.programId);
-    let lastTicketOwnerAccount = (yield nolosslottery.account.ticket.fetch(lastTicketAccount)).owner;
-    console.log("Withdrawing....");
-    let tx = yield nolosslottery.rpc.withdraw({
+        anchor.utils.bytes.utf8.encode(lottery_state.totalTickets.toString())], nolosslottery.programId);
+    console.log("Depositing....");
+    let tx = yield nolosslottery.rpc.deposit({
         accounts: {
-            destinationLiquidityAccount: destinationLiquidityAccount.address,
-            sourceCollateralAccount: sourceCollateralAccount,
+            sourceLiquidity: sourceLiquidityAccount.address,
+            destinationCollateralAccount: destinationCollateralAccount,
             lendingProgram: lending_program,
             lendingMarket: lending_market,
             reserve: reserve,
@@ -84,19 +79,18 @@ const handler = (argv) => __awaiter(void 0, void 0, void 0, function* () {
             lendingMarketAuthority: lending_market_authority,
             transferAuthority: payer.publicKey,
             clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
-            lotteryAccount: lotteryAccount,
             userDepositAccount: userAccount,
+            lotteryAccount: lotteryAccount,
             ticketAccount: ticketAccount,
-            lastTicketOwnerAccount: lastTicketOwnerAccount,
-            lastTicketAccount: lastTicketAccount,
             sender: payer.publicKey,
             tokenProgram: token.TOKEN_PROGRAM_ID,
+            systemProgram: anchor.web3.SystemProgram.programId,
         },
     });
     console.log("Collateral balance: ", (yield nolosslottery
-        .provider.connection.getTokenAccountBalance(sourceCollateralAccount)).value.uiAmount);
+        .provider.connection.getTokenAccountBalance(destinationCollateralAccount)).value.uiAmount);
     console.log("User SOL balance: ", (yield nolosslottery
-        .provider.connection.getTokenAccountBalance(destinationLiquidityAccount.address)).value.uiAmount);
+        .provider.connection.getTokenAccountBalance(sourceLiquidityAccount.address)).value.uiAmount);
     console.log("TX: ", tx);
 });
 exports.handler = handler;
