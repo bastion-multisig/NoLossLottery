@@ -49,7 +49,7 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
         process.exit(1)
     }
 
-    if (lottery_state.prize == new anchor.BN(0) || lottery_state.prize === undefined) {
+    if (lottery_state.prize.toString() === "0" || lottery_state.prize === undefined) {
         console.log("No prize!");
         process.exit(1)
     }
