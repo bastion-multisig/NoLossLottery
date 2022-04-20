@@ -9,7 +9,6 @@ describe("nolosslottery",  () => {
     const provider = anchor.Provider.env();
     anchor.setProvider(provider);
     const nolosslottery = anchor.workspace.Nolosslottery as anchor.Program<Nolosslottery>;
-    console.log(nolosslottery.programId.toString())
     let source_token;
     let destinationCollateralAccount_token;
     const payer = anchor.web3.Keypair.fromSecretKey(
@@ -67,8 +66,8 @@ describe("nolosslottery",  () => {
             solTransferTransaction,
             [payer]);
 
-        console.log("Source Account Balance ", await provider.connection.getTokenAccountBalance(source_token.address))
-        console.log("ACC ", destinationCollateralAccount_token)
+        console.log("Source Account Balance ",
+            (await provider.connection.getTokenAccountBalance(source_token.address)).value.uiAmount)
     });
 
     it('Initializes', async () => {
@@ -188,10 +187,10 @@ describe("nolosslottery",  () => {
             },
         })
 
-        console.log("Collateral balance: ", await nolosslottery
-            .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address));
-        console.log("User SOL balance: ", await nolosslottery
-            .provider.connection.getTokenAccountBalance(source_token.address));
+        console.log("Collateral balance: ", (await nolosslottery
+            .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address)).value.uiAmount);
+        console.log("User SOL balance: ", (await nolosslottery
+            .provider.connection.getTokenAccountBalance(source_token.address)).value.uiAmount);
         console.log("User deposit state: ", await nolosslottery
             .account.userDeposit.fetch(userAccount));
         console.log("Lottery state: ", await nolosslottery
@@ -255,13 +254,18 @@ describe("nolosslottery",  () => {
                 tokenProgram: token.TOKEN_PROGRAM_ID,
             },
         })
-        console.log("Collateral balance: ", await nolosslottery
-            .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address));
-        
+        console.log("Collateral balance: ", (await nolosslottery
+            .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address)).value.uiAmount);
+        console.log("User SOL balance: ", (await nolosslottery
+            .provider.connection.getTokenAccountBalance(source_token.address)).value.uiAmount);
         console.log("User deposit state: ", await nolosslottery
             .account.userDeposit.fetch(userAccount));
-        console.log("Lottery state: ", await nolosslottery
-            .account.lottery.fetch(lotteryAccount));
+
+        lottery_state = await nolosslottery
+            .account.lottery.fetch(lotteryAccount);
+        console.log("Winning time: ", lottery_state.winningTime.toString());
+        console.log("Prize: ", lottery_state.prize.toString());
+        console.log("Total tickets: ", lottery_state.totalTickets.toString());
     })
 
     it('Raffles', async () => {
@@ -276,10 +280,16 @@ describe("nolosslottery",  () => {
                 lotteryAccount: lotteryAccount,
                 collateralMint: new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf"), // mint
                 collateralAccount: destinationCollateralAccount_token.address,
+                clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
             },
         })
         let lottery_state = await nolosslottery
             .account.lottery.fetch(lotteryAccount);
+
+        if (lottery_state.prize.eqn(0)) {
+            return;
+        }
+
         console.log("Lottery state: ", lottery_state);
         const [userAccount, _userAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
