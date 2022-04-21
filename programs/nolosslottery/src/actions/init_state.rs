@@ -7,7 +7,7 @@ pub struct InitState<'info> {
     #[account(
         init,
         seeds = [
-            STATE_SEED, 
+            STATE_SEED,
             vrf.key().as_ref(),
             authority.key().as_ref(),
         ],
@@ -36,7 +36,7 @@ impl InitState<'_> {
         Ok(())
     }
 
-    pub fn actuate(ctx: &Context<Self>) -> Result<()> {
+    pub fn process(ctx: &Context<Self>) -> Result<()> {
         let state = &mut ctx.accounts.state.load_init()?;
 
         state.vrf = ctx.accounts.vrf.key.clone();

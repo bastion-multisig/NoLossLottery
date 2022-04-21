@@ -20,7 +20,7 @@ impl UpdateResult<'_> {
         Ok(())
     }
 
-    pub fn actuate(ctx: &Context<Self>, _params: &UpdateResultParams) -> ProgramResult {
+    pub fn process(ctx: &Context<Self>, _params: &UpdateResultParams) -> ProgramResult {
         let vrf_account_info = &ctx.accounts.vrf;
         let vrf = VrfAccountData::new(vrf_account_info)?;
         let result_buffer = vrf.get_result()?;

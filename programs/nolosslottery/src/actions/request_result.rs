@@ -65,7 +65,7 @@ impl RequestResult<'_> {
         Ok(())
     }
 
-    pub fn actuate(ctx: &Context<Self>, params: &RequestResultParams) -> ProgramResult {
+    pub fn process(ctx: &Context<Self>, params: &RequestResultParams) -> ProgramResult {
         let client_state = ctx.accounts.state.load()?;
         let bump = client_state.bump.clone();
         drop(client_state);

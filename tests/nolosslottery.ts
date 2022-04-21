@@ -73,7 +73,8 @@ describe("nolosslottery",  () => {
     it('Initializes', async () => {
         const [userAccount, userAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
-                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                [anchor.utils.bytes.utf8.encode("lottery"),
+                    reserve_collateral_mint.toBuffer(),
                     payer.publicKey.toBuffer(),],
                 nolosslottery.programId
             );
@@ -85,6 +86,7 @@ describe("nolosslottery",  () => {
                     accounts: {
                         signer: payer.publicKey,
                         userDepositAccount: userAccount,
+                        ctokenMint: reserve_collateral_mint,
                         systemProgram: anchor.web3.SystemProgram.programId,
                     },
                 });
@@ -92,7 +94,8 @@ describe("nolosslottery",  () => {
 
         const [lotteryAccount, lotteryAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
-                [anchor.utils.bytes.utf8.encode("lottery")],
+                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                    reserve_collateral_mint.toBuffer(),],
                 nolosslottery.programId
             );
         try {
@@ -102,6 +105,7 @@ describe("nolosslottery",  () => {
                     accounts: {
                         signer: payer.publicKey,
                         lotteryAccount: lotteryAccount,
+                        ctokenMint: reserve_collateral_mint,
                         systemProgram: anchor.web3.SystemProgram.programId,
                     },
                 });
@@ -111,13 +115,15 @@ describe("nolosslottery",  () => {
     it('Deposits and gets tickets', async () => {
         const [userAccount, _userAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
-                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                [anchor.utils.bytes.utf8.encode("lottery"),
+                    reserve_collateral_mint.toBuffer(),
                     payer.publicKey.toBuffer(),],
                 nolosslottery.programId
             );
         let [lotteryAccount, _lotteryAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
-                [anchor.utils.bytes.utf8.encode("lottery")],
+                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                    reserve_collateral_mint.toBuffer()],
                 nolosslottery.programId
             );
 
@@ -127,6 +133,7 @@ describe("nolosslottery",  () => {
         let [ticketAccount, _ticketAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("ticket#"),
+                    reserve_collateral_mint.toBuffer(),
                     anchor.utils.bytes.utf8.encode(lottery_state.totalTickets.toString())],
                 nolosslottery.programId
             );
@@ -160,6 +167,7 @@ describe("nolosslottery",  () => {
         [ticketAccount, _ticketAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("ticket#"),
+                    reserve_collateral_mint.toBuffer(),
                     anchor.utils.bytes.utf8.encode(lottery_state.totalTickets.toString())],
                 nolosslottery.programId
             );
@@ -202,13 +210,15 @@ describe("nolosslottery",  () => {
     it('Withdraws and burns tickets', async () => {
         const [userAccount, _userAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
-                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                [anchor.utils.bytes.utf8.encode("lottery"),
+                    reserve_collateral_mint.toBuffer(),
                     payer.publicKey.toBuffer(),],
                 nolosslottery.programId
             );
         const [lotteryAccount, _lotteryAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
-                [anchor.utils.bytes.utf8.encode("lottery")],
+                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                    reserve_collateral_mint.toBuffer()],
                 nolosslottery.programId
             );
         let lottery_state = await nolosslottery.account.lottery.fetch(lotteryAccount);
@@ -218,6 +228,7 @@ describe("nolosslottery",  () => {
         let [ticketAccount, _ticketAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("ticket#"),
+                    reserve_collateral_mint.toBuffer(),
                     anchor.utils.bytes.utf8.encode(
                         user_state.ticketIds.at(0).toString())],
                 nolosslottery.programId
@@ -225,6 +236,7 @@ describe("nolosslottery",  () => {
         let [lastTicketAccount, _lastTicketAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("ticket#"),
+                    reserve_collateral_mint.toBuffer(),
                     anchor.utils.bytes.utf8.encode(
                         lottery_state.totalTickets.add(new anchor.BN(-1)).toString())],
                 nolosslottery.programId
@@ -271,7 +283,8 @@ describe("nolosslottery",  () => {
     it('Raffles', async () => {
         const [lotteryAccount, _lotteryAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
-                [anchor.utils.bytes.utf8.encode("lottery")],
+                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                    reserve_collateral_mint.toBuffer()],
                 nolosslottery.programId
             );
 
@@ -293,7 +306,8 @@ describe("nolosslottery",  () => {
         console.log("Lottery state: ", lottery_state);
         const [userAccount, _userAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
-                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                [anchor.utils.bytes.utf8.encode("lottery"),
+                    reserve_collateral_mint.toBuffer(),
                     payer.publicKey.toBuffer(),],
                 nolosslottery.programId
             );
@@ -301,7 +315,10 @@ describe("nolosslottery",  () => {
         console.log("Winning ticket state: ",
             await nolosslottery.account.ticket.fetch(lottery_state.winningTicket));
         let [ticketAccount, _ticketAccountBump] =
-            await anchor.web3.PublicKey.findProgramAddress([anchor.utils.bytes.utf8.encode("ticket#"), anchor.utils.bytes.utf8.encode(lottery_state.totalTickets.toString())], nolosslottery.programId);
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("ticket#"),
+                    reserve_collateral_mint.toBuffer(),
+                    anchor.utils.bytes.utf8.encode(lottery_state.totalTickets.toString())], nolosslottery.programId);
         await nolosslottery.rpc.payout({
             accounts: {
                 winningTicket: lottery_state.winningTicket,
