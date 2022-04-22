@@ -14,7 +14,7 @@ pub fn get_collateral(
         .liquidity_to_collateral(liquidity_amount)?;
 
     // withdraw lockup
-    if less_than_week_from_last_w(last_winning_time, clock) {
+    if less_than_week(last_winning_time, clock) {
         collateral_amount = (collateral_amount as f64 * 0.85) as u64;
     }
 
@@ -24,9 +24,9 @@ pub fn get_collateral(
     Ok(collateral_amount)
 }
 
-fn less_than_week_from_last_w(winning_time: i64, clock: &AccountInfo) -> bool {
-    winning_time > 0
-        && winning_time
+pub fn less_than_week(time: i64, clock: &AccountInfo) -> bool {
+    time > 0
+        && time
             < (Clock::from_account_info(&clock.to_account_info())
                 .unwrap()
                 .epoch as i64

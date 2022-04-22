@@ -56,6 +56,11 @@ impl Deposit<'_> {
         {
             return err!(LotteryErrorCode::WrongPool);
         }
+
+        if ctx.accounts.lottery_account.is_blocked {
+            return err!(LotteryErrorCode::DepositBlocked);
+        }
+
         Ok(())
     }
 

@@ -34,6 +34,9 @@ pub mod nolosslottery {
         ctx.accounts.user_deposit_account.bump = bump;
         ctx.accounts.user_deposit_account.ticket_ids = vec![];
         ctx.accounts.user_deposit_account.ctoken_mint = ctx.accounts.ctoken_mint.key().clone();
+
+        ctx.accounts.lottery_account.users += 1;
+
         Ok(())
     }
 
@@ -65,37 +68,9 @@ pub mod nolosslottery {
         RequestResult::process(&ctx, &params)
     }
 
-    pub fn lottery(ctx: Context<LotteryInstruction>) -> ProgramResult {
-        if ctx.accounts.lottery_account.total_tickets == 0 {
-            return Ok(());
-        }
-
-        let prize_amount = helpers::calculate_prize(
-            ctx.accounts.collateral_account.amount,
-            ctx.accounts.collateral_mint.decimals,
-            ctx.accounts.lottery_account.total_tickets,
-        );
-
-        if prize_amount < 1 {
-            return Ok(());
-        }
-
-        // TODO: create a function that generates a real random number
-        let winning_ticket_id = 0;
-
-        let winning_ticket = Pubkey::find_program_address(
-            &["ticket#".as_ref(), winning_ticket_id.to_string().as_ref()],
-            ctx.program_id,
-        )
-        .0;
-        ctx.accounts.lottery_account.winning_time =
-            Clock::from_account_info(&ctx.accounts.clock.to_account_info())
-                .unwrap()
-                .epoch as i64;
-        ctx.accounts.lottery_account.winning_ticket = winning_ticket;
-        ctx.accounts.lottery_account.prize = prize_amount as u64;
-
-        Ok(())
+    #[access_control(ctx.accounts.validate(&ctx))]
+    pub fn lottery(mut ctx: Context<LotteryInstruction>) -> Result<()> {
+        LotteryInstruction::process(&mut ctx)
     }
 
     pub fn payout(ctx: Context<PayoutInstruction>) -> Result<()> {
@@ -113,6 +88,7 @@ pub mod nolosslottery {
         // if there is no prize
         if ctx.accounts.lottery_account.prize < 1 {
             ctx.accounts.lottery_account.winning_ticket = Pubkey::default();
+            ctx.accounts.lottery_account.is_blocked = false;
             return err!(LotteryErrorCode::EmptyPrize);
         }
 
@@ -145,7 +121,7 @@ pub struct InitializeLottery<'info> {
         seeds = ["nolosslottery".as_ref(), ctoken_mint.key().as_ref()],
         bump,
         payer = signer,
-        space = 8 + 16 + 16 + 16 + 32 + 16 + 16 + 16
+        space = 8 + 1 + 8 + 32 + 8 + 8 + 32 + 8 + 16 + 8 + 1
     )]
     pub lottery_account: Box<Account<'info, Lottery>>,
     pub ctoken_mint: Box<Account<'info, Mint>>,
@@ -166,6 +142,12 @@ pub struct Lottery {
 
     // parameters
     pub ctoken_mint: Pubkey,
+
+    // info
+    pub users: u64,
+    pub liquidity: u128,
+    pub last_call: i64,
+    pub is_blocked: bool
 }
 
 #[derive(Accounts)]
@@ -181,6 +163,8 @@ pub struct InitializeDeposit<'info> {
         space = 8 + 1 + (4 + 2000 * 4) + 16 + 32
     )]
     pub user_deposit_account: Box<Account<'info, UserDeposit>>,
+    #[account(mut)]
+    pub lottery_account: Box<Account<'info, Lottery>>,
     pub ctoken_mint: Box<Account<'info, Mint>>,
     pub system_program: Program<'info, System>,
 }
@@ -203,18 +187,6 @@ pub struct UserDeposit {
 pub struct Ticket {
     pub id: u64,
     pub owner: Pubkey,
-}
-
-// an instruction for the `lottery` endpoint
-#[derive(Accounts)]
-pub struct LotteryInstruction<'info> {
-    #[account(mut)]
-    pub lottery_account: Account<'info, Lottery>,
-    #[account(mut)]
-    pub collateral_mint: Account<'info, Mint>,
-    #[account(mut)]
-    pub collateral_account: Account<'info, TokenAccount>,
-    pub clock: Sysvar<'info, Clock>,
 }
 
 // an instruction to send the prize to the user

@@ -12,3 +12,6 @@ pub use withdraw::*;
 
 pub mod deposit;
 pub use deposit::*;
+
+pub mod lottery;
+pub use lottery::*;
