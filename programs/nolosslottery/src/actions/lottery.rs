@@ -11,6 +11,9 @@ pub struct LotteryInstruction<'info> {
     pub collateral_mint: Account<'info, Mint>,
     #[account(mut)]
     pub collateral_account: Account<'info, TokenAccount>,
+    /// CHECK:
+    #[account(mut)]
+    pub reserve: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
 }
 
@@ -42,15 +45,18 @@ impl LotteryInstruction<'_> {
             return Ok(());
         }
 
-        // should change this
-        let prize_amount = helpers::calculate_prize(
+        let collateral_in_liquidity = helpers::get_liquidity(
             ctx.accounts.collateral_account.amount,
-            ctx.accounts.collateral_mint.decimals,
-            ctx.accounts.lottery_account.total_tickets,
-        );
+            &ctx.accounts.reserve,
+        )?;
+        let prize_amount =
+            if collateral_in_liquidity >= ctx.accounts.lottery_account.liquidity_amount {
+                collateral_in_liquidity - ctx.accounts.lottery_account.liquidity_amount
+            } else {
+                0
+            };
 
-        // should change this
-        if prize_amount < 1 {
+        if prize_amount < ctx.accounts.lottery_account.ticket_price {
             return Ok(());
         }
 
@@ -67,13 +73,17 @@ impl LotteryInstruction<'_> {
         let winning_ticket_id = 0;
 
         let winning_ticket = Pubkey::find_program_address(
-            &["ticket#".as_ref(), winning_ticket_id.to_string().as_ref()],
+            &[
+                "ticket#".as_ref(),
+                ctx.accounts.lottery_account.ctoken_mint.as_ref(),
+                winning_ticket_id.to_string().as_ref(),
+            ],
             ctx.program_id,
         )
         .0;
         ctx.accounts.lottery_account.winning_time = current_time;
         ctx.accounts.lottery_account.winning_ticket = winning_ticket;
-        ctx.accounts.lottery_account.prize = prize_amount as u64;
+        ctx.accounts.lottery_account.prize = prize_amount;
 
         Ok(())
     }

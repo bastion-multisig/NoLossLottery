@@ -2,7 +2,7 @@ use crate::*;
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct Deposit<'info> {
+pub struct ProvideInstruction<'info> {
     // solend part
     #[account(mut)]
     pub source_liquidity: Box<Account<'info, TokenAccount>>,
@@ -25,35 +25,17 @@ pub struct Deposit<'info> {
     pub transfer_authority: Signer<'info>,
     pub clock: Sysvar<'info, Clock>,
 
-    // lottery part
-    #[account(mut)]
-    pub user_deposit_account: Box<Account<'info, UserDeposit>>,
     #[account(mut)]
     pub lottery_account: Box<Account<'info, Lottery>>,
-    #[account(
-    init,
-    payer = sender,
-    space = 56, // 8 + 16 + 32,
-    seeds = ["ticket#".as_ref(),
-    reserve_collateral_mint.key().as_ref(),
-    lottery_account.total_tickets.to_string().as_ref()],
-    bump
-    )]
-    pub ticket_account: Box<Account<'info, Ticket>>,
 
     // authority part
-    #[account(mut)]
-    pub sender: Signer<'info>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 
-impl Deposit<'_> {
+impl ProvideInstruction<'_> {
     pub fn validate(&self, ctx: &Context<Self>) -> Result<()> {
-        if (ctx.accounts.lottery_account.ctoken_mint != ctx.accounts.reserve_collateral_mint.key())
-            || ctx.accounts.lottery_account.ctoken_mint
-                != (ctx.accounts.user_deposit_account.ctoken_mint)
-        {
+        if ctx.accounts.lottery_account.ctoken_mint != ctx.accounts.reserve_collateral_mint.key() {
             return err!(LotteryErrorCode::WrongPool);
         }
 
@@ -66,6 +48,23 @@ impl Deposit<'_> {
 
     pub fn process(ctx: &mut Context<Self>) -> Result<()> {
         // deposit to Solend
+        solana_program::program::invoke(
+            &spl_token::instruction::approve(
+                &ctx.accounts.token_program.to_account_info().key.clone(),
+                &ctx.accounts.source_liquidity.to_account_info().key.clone(),
+                &ctx.accounts.lending_program.to_account_info().key.clone(),
+                &ctx.accounts
+                    .transfer_authority
+                    .to_account_info()
+                    .key
+                    .clone(),
+                &[],
+                ctx.accounts.lottery_account.ticket_price,
+            )?,
+            ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
+        )
+        .unwrap();
+
         solana_program::program::invoke(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
                 *ctx.accounts.lending_program.key,
@@ -97,16 +96,6 @@ impl Deposit<'_> {
             ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
         )
         .unwrap();
-
-        // change user state
-        ctx.accounts
-            .user_deposit_account
-            .ticket_ids
-            .push(ctx.accounts.lottery_account.total_tickets);
-
-        // new ticket
-        ctx.accounts.ticket_account.id = ctx.accounts.lottery_account.total_tickets;
-        ctx.accounts.ticket_account.owner = ctx.accounts.user_deposit_account.key();
 
         // update stats
         ctx.accounts.lottery_account.total_tickets += 1;

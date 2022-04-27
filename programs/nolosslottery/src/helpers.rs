@@ -1,17 +1,30 @@
 use crate::*;
 
-pub fn get_collateral(
+pub fn get_collateral(liquidity_amount: u64, reserve: &AccountInfo) -> Result<u64> {
+    let reserve_instance = spl_token_lending::state::Reserve::unpack(&reserve.data.borrow())?;
+
+    // collateral amount that costs `liquidity_amount` tokens
+    Ok(reserve_instance
+        .collateral_exchange_rate()?
+        .liquidity_to_collateral(liquidity_amount)?)
+}
+
+pub fn get_liquidity(collateral_amount: u64, reserve: &AccountInfo) -> Result<u64> {
+    let reserve_instance = spl_token_lending::state::Reserve::unpack(&reserve.data.borrow())?;
+
+    // collateral amount that costs `liquidity_amount` tokens
+    Ok(reserve_instance
+        .collateral_exchange_rate()?
+        .collateral_to_liquidity(collateral_amount)?)
+}
+
+pub fn get_ticket_withdraw_price(
     liquidity_amount: u64,
     reserve: &AccountInfo,
     last_winning_time: i64,
     clock: &AccountInfo,
 ) -> Result<u64> {
-    let reserve_instance = spl_token_lending::state::Reserve::unpack(&reserve.data.borrow())?;
-
-    // collateral amount that costs 1 SOL
-    let mut collateral_amount = reserve_instance
-        .collateral_exchange_rate()?
-        .liquidity_to_collateral(liquidity_amount)?;
+    let mut collateral_amount = get_collateral(liquidity_amount, reserve)?;
 
     // withdraw lockup
     if less_than_week(last_winning_time, clock) {
@@ -31,11 +44,4 @@ pub fn less_than_week(time: i64, clock: &AccountInfo) -> bool {
                 .unwrap()
                 .epoch as i64
                 + 7 * 24 * 60 * 60)
-}
-
-pub fn calculate_prize(collateral_amount: u64, collateral_decimal: u8, total_tickets: u64) -> i64 {
-    collateral_amount as i64
-        / 10_i32.pow(collateral_decimal as u32) as i64
-        / TICKET_PRICE_IN_COLLATERAL as i64
-        - total_tickets as i64
 }

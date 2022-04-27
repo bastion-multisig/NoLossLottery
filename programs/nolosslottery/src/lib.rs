@@ -10,22 +10,23 @@ use anchor_lang::solana_program;
 use anchor_lang::AccountsClose;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use solana_program::entrypoint::ProgramResult;
-use solana_program::native_token::LAMPORTS_PER_SOL;
 use solana_program::program_pack::Pack;
 
-declare_id!("8NJvNXYdVvUm4CGCC96CJ6mr2WKNw38caPtQnYxSbVMD");
+declare_id!("A7aDGZDNx6is9LppATYTE94NyAWQF7NUo4cXT5dLFV7J");
 
 const STATE_SEED: &[u8] = b"STATE";
-pub const TICKET_PRICE: u64 = (1_u64 * LAMPORTS_PER_SOL) as u64;
-pub const TICKET_PRICE_IN_COLLATERAL: u64 = (1_u64 * 1_000_000_000) as u64;
 
 #[program]
 pub mod nolosslottery {
     use super::*;
 
-    pub fn init_lottery(ctx: Context<InitializeLottery>, bump: u8) -> ProgramResult {
+    pub fn init_lottery(
+        ctx: Context<InitializeLottery>,
+        bump: u8,
+        ticket_price: u64,
+    ) -> ProgramResult {
         ctx.accounts.lottery_account.bump = bump;
-        ctx.accounts.lottery_account.total_tickets = 0;
+        ctx.accounts.lottery_account.ticket_price = ticket_price;
         ctx.accounts.lottery_account.ctoken_mint = ctx.accounts.ctoken_mint.key().clone();
         Ok(())
     }
@@ -73,46 +74,19 @@ pub mod nolosslottery {
         LotteryInstruction::process(&mut ctx)
     }
 
-    pub fn payout(ctx: Context<PayoutInstruction>) -> Result<()> {
-        // set winning time to user's account
-        // it's being set only once here
-        // but the time captured in the `lottery` endpoint
-        if ctx.accounts.lottery_account.winning_time != 0 {
-            ctx.accounts.user_deposit_account.winning_time =
-                ctx.accounts.lottery_account.winning_time;
+    #[access_control(ctx.accounts.validate(&ctx))]
+    pub fn payout(mut ctx: Context<PayoutInstruction>) -> Result<()> {
+        PayoutInstruction::process(&mut ctx)
+    }
 
-            // delete the time of winning
-            ctx.accounts.lottery_account.winning_time = 0
-        }
-
-        // if there is no prize
-        if ctx.accounts.lottery_account.prize < 1 {
-            ctx.accounts.lottery_account.winning_ticket = Pubkey::default();
-            ctx.accounts.lottery_account.is_blocked = false;
-            return err!(LotteryErrorCode::EmptyPrize);
-        }
-
-        // decrease the prize amount
-        ctx.accounts.lottery_account.prize -= 1;
-
-        // change user state
-        ctx.accounts
-            .user_deposit_account
-            .ticket_ids
-            .push(ctx.accounts.lottery_account.total_tickets);
-
-        // new ticket
-        ctx.accounts.ticket_account.id = ctx.accounts.lottery_account.total_tickets;
-        ctx.accounts.ticket_account.owner = ctx.accounts.user_deposit_account.key();
-
-        // count the ticket
-        ctx.accounts.lottery_account.total_tickets += 1;
-
-        Ok(())
+    #[access_control(ctx.accounts.validate(&ctx))]
+    pub fn provide(mut ctx: Context<ProvideInstruction>) -> Result<()> {
+        ProvideInstruction::process(&mut ctx)
     }
 }
 
 #[derive(Accounts)]
+#[instruction(bump: u8, ticket_price: u64)]
 pub struct InitializeLottery<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
@@ -121,7 +95,7 @@ pub struct InitializeLottery<'info> {
         seeds = ["nolosslottery".as_ref(), ctoken_mint.key().as_ref()],
         bump,
         payer = signer,
-        space = 8 + 1 + 8 + 32 + 8 + 8 + 32 + 8 + 16 + 8 + 1
+        space = 8 + 1 + 8 + 32 + 8 + 8 + 32 + 8 + 8 + 8 + 8 + 8 + 1
     )]
     pub lottery_account: Box<Account<'info, Lottery>>,
     pub ctoken_mint: Box<Account<'info, Mint>>,
@@ -142,12 +116,13 @@ pub struct Lottery {
 
     // parameters
     pub ctoken_mint: Pubkey,
+    pub ticket_price: u64,
 
     // info
     pub users: u64,
-    pub liquidity: u128,
+    pub liquidity_amount: u64,
     pub last_call: i64,
-    pub is_blocked: bool
+    pub is_blocked: bool,
 }
 
 #[derive(Accounts)]
@@ -187,32 +162,6 @@ pub struct UserDeposit {
 pub struct Ticket {
     pub id: u64,
     pub owner: Pubkey,
-}
-
-// an instruction to send the prize to the user
-#[derive(Accounts)]
-pub struct PayoutInstruction<'info> {
-    // lottery part
-    #[account(mut)]
-    pub user_deposit_account: Box<Account<'info, UserDeposit>>,
-    #[account(mut)]
-    pub lottery_account: Box<Account<'info, Lottery>>,
-
-    // tickets part
-    #[account(mut)]
-    pub sender: Signer<'info>,
-    #[account(
-        init,
-        payer = sender,
-        space = 56, // 8 + 16 + 32,
-        seeds = ["ticket#".as_ref(), lottery_account.total_tickets.to_string().as_ref()],
-        bump
-    )]
-    pub ticket_account: Box<Account<'info, Ticket>>,
-    pub system_program: Program<'info, System>,
-
-    #[account(mut)]
-    pub winning_ticket: Account<'info, Ticket>,
 }
 
 #[repr(packed)]

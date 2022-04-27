@@ -15,3 +15,9 @@ pub use deposit::*;
 
 pub mod lottery;
 pub use lottery::*;
+
+mod payout;
+pub use payout::*;
+
+mod provide;
+pub use provide::*;

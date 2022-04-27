@@ -60,8 +60,8 @@ impl Withdraw<'_> {
     }
 
     pub fn process(ctx: &mut Context<Self>) -> Result<()> {
-        let collateral_amount = helpers::get_collateral(
-            TICKET_PRICE,
+        let collateral_amount = helpers::get_ticket_withdraw_price(
+            ctx.accounts.lottery_account.ticket_price,
             &ctx.accounts.reserve,
             ctx.accounts.user_deposit_account.winning_time,
             &ctx.accounts.clock.to_account_info(),
@@ -150,7 +150,9 @@ impl Withdraw<'_> {
             .last_ticket_account
             .close(ctx.accounts.sender.to_account_info())?;
 
+        // update stats
         ctx.accounts.lottery_account.total_tickets -= 1;
+        ctx.accounts.lottery_account.liquidity_amount -= ctx.accounts.lottery_account.ticket_price;
 
         Ok(())
     }

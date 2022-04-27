@@ -20,6 +20,7 @@ describe("nolosslottery",  () => {
             )
         )
     );
+    const lottery_receiver = anchor.web3.Keypair.generate();
     const lending_program = new anchor.web3.PublicKey("ALend7Ketfx5bxh6ghsCDXAoDrhvEmsXT3cynB6aPLgx");
     const reserve = new anchor.web3.PublicKey("5VVLD7BQp8y3bTgyF5ezm1ResyMTR3PhYsT4iHFU8Sxz");
     const reserve_collateral_mint = new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf");
@@ -38,7 +39,7 @@ describe("nolosslottery",  () => {
             await token.getOrCreateAssociatedTokenAccount(
                 provider.connection,
                 payer, // fee payer
-                new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf"), // mint
+                reserve_collateral_mint,
                 payer.publicKey // owner,
             );
 
@@ -66,32 +67,13 @@ describe("nolosslottery",  () => {
             solTransferTransaction,
             [payer]);
 
+        console.log("Destination Account Balance ",
+            (await provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address)).value.uiAmount)
         console.log("Source Account Balance ",
             (await provider.connection.getTokenAccountBalance(source_token.address)).value.uiAmount)
     });
 
-    it('Initializes', async () => {
-        const [userAccount, userAccountBump] =
-            await anchor.web3.PublicKey.findProgramAddress(
-                [anchor.utils.bytes.utf8.encode("lottery"),
-                    reserve_collateral_mint.toBuffer(),
-                    payer.publicKey.toBuffer(),],
-                nolosslottery.programId
-            );
-
-        try {
-            await nolosslottery.rpc.initUserDeposit(
-                userAccountBump,
-                {
-                    accounts: {
-                        signer: payer.publicKey,
-                        userDepositAccount: userAccount,
-                        ctokenMint: reserve_collateral_mint,
-                        systemProgram: anchor.web3.SystemProgram.programId,
-                    },
-                });
-        } catch (e) { } // already initialized
-
+    it('Initializes the lottery', async () => {
         const [lotteryAccount, lotteryAccountBump] =
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("nolosslottery"),
@@ -101,9 +83,39 @@ describe("nolosslottery",  () => {
         try {
             await nolosslottery.rpc.initLottery(
                 lotteryAccountBump,
+                new anchor.BN(1_000_000_000),
                 {
                     accounts: {
                         signer: payer.publicKey,
+                        lotteryAccount: lotteryAccount,
+                        ctokenMint: reserve_collateral_mint,
+                        systemProgram: anchor.web3.SystemProgram.programId,
+                    },
+                });
+        } catch (e) { } // already initialized
+    })
+
+    it("Initializes user's state", async () => {
+        const [userAccount, userAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("lottery"),
+                    reserve_collateral_mint.toBuffer(),
+                    payer.publicKey.toBuffer(),],
+                nolosslottery.programId
+            );
+        const [lotteryAccount, lotteryAccountBump] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                    reserve_collateral_mint.toBuffer(),],
+                nolosslottery.programId
+            );
+        try {
+            await nolosslottery.rpc.initUserDeposit(
+                userAccountBump,
+                {
+                    accounts: {
+                        signer: payer.publicKey,
+                        userDepositAccount: userAccount,
                         lotteryAccount: lotteryAccount,
                         ctokenMint: reserve_collateral_mint,
                         systemProgram: anchor.web3.SystemProgram.programId,
@@ -262,7 +274,7 @@ describe("nolosslottery",  () => {
                 lastTicketOwnerAccount: lastTicketOwnerAccount,
                 lastTicketAccount: lastTicketAccount,
 
-                sender: payer.publicKey, // mint authority
+                sender: payer.publicKey,
                 tokenProgram: token.TOKEN_PROGRAM_ID,
             },
         })
@@ -291,8 +303,9 @@ describe("nolosslottery",  () => {
         await nolosslottery.rpc.lottery({
             accounts: {
                 lotteryAccount: lotteryAccount,
-                collateralMint: new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf"), // mint
+                collateralMint: reserve_collateral_mint,
                 collateralAccount: destinationCollateralAccount_token.address,
+                reserve: reserve,
                 clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
             },
         })
