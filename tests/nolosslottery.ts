@@ -184,7 +184,7 @@ describe("nolosslottery",  () => {
                 nolosslottery.programId
             );
 
-        await nolosslottery.rpc.deposit({
+        let tx = await nolosslottery.rpc.deposit({
             accounts: {
                 sourceLiquidity: source_token.address,
                 destinationCollateralAccount: destinationCollateralAccount_token.address,
@@ -206,6 +206,7 @@ describe("nolosslottery",  () => {
                 systemProgram: anchor.web3.SystemProgram.programId,
             },
         })
+        console.log("TX:", tx)
 
         console.log("Collateral balance: ", (await nolosslottery
             .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address)).value.uiAmount);
@@ -217,6 +218,51 @@ describe("nolosslottery",  () => {
             .account.lottery.fetch(lotteryAccount));
         console.log("Ticket state: ", await nolosslottery
             .account.ticket.fetch(ticketAccount));
+    })
+
+    it('Provides liquidity', async () => {
+        let [lotteryAccount] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("nolosslottery"),
+                    reserve_collateral_mint.toBuffer()],
+                nolosslottery.programId
+            );
+
+        let lottery_state = await nolosslottery
+            .account.lottery.fetch(lotteryAccount);
+        console.log("Lottery state: ", lottery_state);
+
+        let tx = await nolosslottery.rpc.provide(
+            new anchor.BN(0.5 * anchor.web3.LAMPORTS_PER_SOL),
+            {accounts: {
+                sourceLiquidity: source_token.address,
+                destinationCollateralAccount: destinationCollateralAccount_token.address,
+                lendingProgram: lending_program,
+                lendingMarket: lending_market,
+                reserve: reserve,
+                reserveCollateralMint: reserve_collateral_mint,
+                reserveLiquiditySupply: reserve_liquidity_supply,
+                lendingMarketAuthority: lending_market_authority,
+                transferAuthority: payer.publicKey,
+                clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+
+                lotteryAccount: lotteryAccount,
+
+                tokenProgram: token.TOKEN_PROGRAM_ID,
+                systemProgram: anchor.web3.SystemProgram.programId,
+            },
+        })
+        console.log("TX:", tx)
+
+        lottery_state = await nolosslottery
+            .account.lottery.fetch(lotteryAccount);
+
+        console.log("Collateral balance: ", (await nolosslottery
+            .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address)).value.uiAmount);
+        console.log("User SOL balance: ", (await nolosslottery
+            .provider.connection.getTokenAccountBalance(source_token.address)).value.uiAmount);
+        console.log("Lottery state: ", await nolosslottery
+            .account.lottery.fetch(lotteryAccount));
     })
 
     it('Withdraws and burns tickets', async () => {
@@ -255,7 +301,7 @@ describe("nolosslottery",  () => {
             );
         let lastTicketOwnerAccount = (await nolosslottery.account.ticket.fetch(lastTicketAccount)).owner
 
-        await nolosslottery.rpc.withdraw({
+        let tx = await nolosslottery.rpc.withdraw({
             accounts: {
                 destinationLiquidityAccount: source_token.address,
                 sourceCollateralAccount: destinationCollateralAccount_token.address,
@@ -278,6 +324,8 @@ describe("nolosslottery",  () => {
                 tokenProgram: token.TOKEN_PROGRAM_ID,
             },
         })
+        console.log("TX:", tx)
+
         console.log("Collateral balance: ", (await nolosslottery
             .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address)).value.uiAmount);
         console.log("User SOL balance: ", (await nolosslottery
@@ -334,7 +382,7 @@ describe("nolosslottery",  () => {
                 [anchor.utils.bytes.utf8.encode("ticket#"),
                     reserve_collateral_mint.toBuffer(),
                     anchor.utils.bytes.utf8.encode(lottery_state.totalTickets.toString())], nolosslottery.programId);
-        await nolosslottery.rpc.payout({
+        tx = await nolosslottery.rpc.payout({
             accounts: {
                 winningTicket: lottery_state.winningTicket,
                 lotteryAccount: lotteryAccount,
@@ -344,7 +392,8 @@ describe("nolosslottery",  () => {
                 systemProgram: anchor.web3.SystemProgram.programId,
             },
         })
-    console.log("Lottery state: ", await nolosslottery
+        console.log("TX:", tx)
+        console.log("Lottery state: ", await nolosslottery
         .account.lottery.fetch(lotteryAccount));
     })
 });

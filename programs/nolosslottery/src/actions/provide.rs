@@ -81,7 +81,6 @@ impl ProvideInstruction<'_> {
         .unwrap();
 
         // update stats
-        ctx.accounts.lottery_account.total_tickets += 1;
         ctx.accounts.lottery_account.liquidity_amount += ctx.accounts.lottery_account.ticket_price;
 
         Ok(())
