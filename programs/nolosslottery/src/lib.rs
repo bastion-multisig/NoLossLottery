@@ -12,7 +12,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use solana_program::entrypoint::ProgramResult;
 use solana_program::program_pack::Pack;
 
-declare_id!("A7aDGZDNx6is9LppATYTE94NyAWQF7NUo4cXT5dLFV7J");
+declare_id!("GQrLSMRsrDE7rR9zEZkctPiZdpfFGcttrUr92LyWN3sr");
 
 const STATE_SEED: &[u8] = b"STATE";
 
@@ -52,8 +52,8 @@ pub mod nolosslottery {
     }
 
     #[access_control(ctx.accounts.validate(&ctx))]
-    pub fn init_state(ctx: Context<InitState>) -> Result<()> {
-        InitState::process(&ctx)
+    pub fn init_state(ctx: Context<InitState>, max_result: u64) -> Result<()> {
+        InitState::process(&ctx, max_result)
     }
 
     #[access_control(ctx.accounts.validate(&ctx, &params))]

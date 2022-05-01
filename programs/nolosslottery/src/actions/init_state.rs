@@ -36,12 +36,14 @@ impl InitState<'_> {
         Ok(())
     }
 
-    pub fn process(ctx: &Context<Self>) -> Result<()> {
+    pub fn process(ctx: &Context<Self>, max_result: u64) -> Result<()> {
         let state = &mut ctx.accounts.state.load_init()?;
 
         state.vrf = ctx.accounts.vrf.key.clone();
         state.authority = ctx.accounts.authority.key.clone();
         state.bump = ctx.bumps.get("state").unwrap().clone();
+
+        state.max_result = max_result;
 
         Ok(())
     }

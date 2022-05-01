@@ -42,6 +42,6 @@ pub fn less_than_week(time: i64, clock: &AccountInfo) -> bool {
         && time
             < (Clock::from_account_info(&clock.to_account_info())
                 .unwrap()
-                .epoch as i64
+                .unix_timestamp as i64
                 + 7 * 24 * 60 * 60)
 }

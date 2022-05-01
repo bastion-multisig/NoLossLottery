@@ -14,6 +14,8 @@ pub struct LotteryInstruction<'info> {
     /// CHECK:
     #[account(mut)]
     pub reserve: AccountInfo<'info>,
+    /// CHECK:
+    pub vrf: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
 }
 
@@ -62,15 +64,19 @@ impl LotteryInstruction<'_> {
 
         let current_time = Clock::from_account_info(&ctx.accounts.clock.to_account_info())
             .unwrap()
-            .epoch as i64;
+            .unix_timestamp as i64;
 
-        // save last call time
-        ctx.accounts.lottery_account.last_call = current_time;
+        let vrf_account_info = &ctx.accounts.vrf;
+        let vrf = VrfAccountData::new(vrf_account_info)?;
+        let result_buffer = vrf.get_result()?;
+        if result_buffer == [0u8; 32] {
+            return Ok(());
+        }
 
-        ctx.accounts.lottery_account.is_blocked = true;
-
-        // TODO: create a function that generates a real random number
-        let winning_ticket_id = 0;
+        let value: &[u128] = bytemuck::cast_slice(&result_buffer[..]);
+        let winning_ticket_id =
+            value[0] % ((ctx.accounts.lottery_account.total_tickets - 1) as u128);
+        msg!("Current winning_ticket_id = {}", winning_ticket_id);
 
         let winning_ticket = Pubkey::find_program_address(
             &[
@@ -81,8 +87,19 @@ impl LotteryInstruction<'_> {
             ctx.program_id,
         )
         .0;
+
+        // this field will be used for the validation of lottery call
         ctx.accounts.lottery_account.winning_time = current_time;
+
         ctx.accounts.lottery_account.winning_ticket = winning_ticket;
+
+        // save last call time
+        ctx.accounts.lottery_account.last_call = current_time;
+
+        // block the lottery
+        ctx.accounts.lottery_account.is_blocked = true;
+
+        // save the prize amount
         ctx.accounts.lottery_account.prize = prize_amount;
 
         Ok(())
