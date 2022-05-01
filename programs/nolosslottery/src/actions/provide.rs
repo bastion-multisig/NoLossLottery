@@ -46,29 +46,12 @@ impl ProvideInstruction<'_> {
         Ok(())
     }
 
-    pub fn process(ctx: &mut Context<Self>) -> Result<()> {
+    pub fn process(ctx: &mut Context<Self>, amount: u64) -> Result<()> {
         // deposit to Solend
-        solana_program::program::invoke(
-            &spl_token::instruction::approve(
-                &ctx.accounts.token_program.to_account_info().key.clone(),
-                &ctx.accounts.source_liquidity.to_account_info().key.clone(),
-                &ctx.accounts.lending_program.to_account_info().key.clone(),
-                &ctx.accounts
-                    .transfer_authority
-                    .to_account_info()
-                    .key
-                    .clone(),
-                &[],
-                ctx.accounts.lottery_account.ticket_price,
-            )?,
-            ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
-        )
-        .unwrap();
-
         solana_program::program::invoke(
             &spl_token_lending::instruction::deposit_reserve_liquidity(
                 *ctx.accounts.lending_program.key,
-                ctx.accounts.lottery_account.ticket_price,
+                amount,
                 ctx.accounts.source_liquidity.to_account_info().key.clone(),
                 ctx.accounts
                     .destination_collateral_account

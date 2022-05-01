@@ -80,8 +80,8 @@ pub mod nolosslottery {
     }
 
     #[access_control(ctx.accounts.validate(&ctx))]
-    pub fn provide(mut ctx: Context<ProvideInstruction>) -> Result<()> {
-        ProvideInstruction::process(&mut ctx)
+    pub fn provide(mut ctx: Context<ProvideInstruction>, amount: u64) -> Result<()> {
+        ProvideInstruction::process(&mut ctx, amount)
     }
 }
 
