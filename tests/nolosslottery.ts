@@ -84,11 +84,13 @@ describe("nolosslottery",  () => {
             await nolosslottery.rpc.initLottery(
                 lotteryAccountBump,
                 new anchor.BN(1_000_000_000),
+                reserve_collateral_mint,
+                vrf_account,
+                destinationCollateralAccount_token.address,
                 {
                     accounts: {
                         signer: payer.publicKey,
                         lotteryAccount: lotteryAccount,
-                        ctokenMint: reserve_collateral_mint,
                         systemProgram: anchor.web3.SystemProgram.programId,
                     },
                 });

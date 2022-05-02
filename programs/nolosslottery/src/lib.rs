@@ -12,7 +12,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use solana_program::entrypoint::ProgramResult;
 use solana_program::program_pack::Pack;
 
-declare_id!("AaUFmcA9zed9Bmuq3LfHLGSk41sff7G1SSSU56zNr3qp");
+declare_id!("AyUeCqxnM2k8cTJr5tMvf5rMvabJWwuvnJqeBvwCU6ES");
 
 const STATE_SEED: &[u8] = b"STATE";
 
@@ -24,10 +24,17 @@ pub mod nolosslottery {
         ctx: Context<InitializeLottery>,
         bump: u8,
         ticket_price: u64,
+        ctoken_mint: Pubkey,
+        vrf_account: Pubkey,
+        collateral_account: Pubkey,
     ) -> ProgramResult {
         ctx.accounts.lottery_account.bump = bump;
         ctx.accounts.lottery_account.ticket_price = ticket_price;
-        ctx.accounts.lottery_account.ctoken_mint = ctx.accounts.ctoken_mint.key().clone();
+        ctx.accounts.lottery_account.ctoken_mint = ctoken_mint;
+        ctx.accounts.lottery_account.vrf_account = vrf_account;
+        ctx.accounts.lottery_account.collateral_account = collateral_account;
+
+        msg!("Data stored");
         Ok(())
     }
 
@@ -86,7 +93,12 @@ pub mod nolosslottery {
 }
 
 #[derive(Accounts)]
-#[instruction(bump: u8, ticket_price: u64)]
+#[instruction(bump: u8,
+              ticket_price: u64,
+              ctoken_mint: Pubkey,
+              vrf_account: Pubkey,
+              collateral_account: Pubkey
+)]
 pub struct InitializeLottery<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
@@ -95,10 +107,9 @@ pub struct InitializeLottery<'info> {
         seeds = ["nolosslottery".as_ref(), ctoken_mint.key().as_ref()],
         bump,
         payer = signer,
-        space = 8 + 1 + 8 + 32 + 8 + 8 + 32 + 8 + 8 + 8 + 8 + 8 + 1
+        space = 8 + 1 + 8 + 32 + 8 + 8 + 32 + 32 + 32 + 8 + 8 + 8 + 8 + 8 + 1
     )]
     pub lottery_account: Box<Account<'info, Lottery>>,
-    pub ctoken_mint: Box<Account<'info, Mint>>,
     pub system_program: Program<'info, System>,
 }
 
@@ -116,6 +127,8 @@ pub struct Lottery {
 
     // parameters
     pub ctoken_mint: Pubkey,
+    pub vrf_account: Pubkey,
+    pub collateral_account: Pubkey,
     pub ticket_price: u64,
 
     // info

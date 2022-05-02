@@ -19,4 +19,8 @@ pub enum LotteryErrorCode {
     DepositBlocked,
     #[msg("Withdrawing is blocked! Payout the prize to be able to withdraw!")]
     WithdrawBlocked,
+    #[msg("Wrong VRF account provided!")]
+    WrongVrf,
+    #[msg("Wrong collateral account provided!")]
+    WrongCollateral,
 }

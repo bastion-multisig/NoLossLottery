@@ -39,6 +39,12 @@ impl ProvideInstruction<'_> {
             return err!(LotteryErrorCode::WrongPool);
         }
 
+        if ctx.accounts.lottery_account.collateral_account
+            != ctx.accounts.destination_collateral_account.key()
+        {
+            return err!(LotteryErrorCode::WrongCollateral);
+        }
+
         if ctx.accounts.lottery_account.is_blocked {
             return err!(LotteryErrorCode::DepositBlocked);
         }

@@ -21,6 +21,14 @@ pub struct LotteryInstruction<'info> {
 
 impl LotteryInstruction<'_> {
     pub fn validate(&self, ctx: &Context<Self>) -> Result<()> {
+        if ctx.accounts.lottery_account.vrf_account != *ctx.accounts.vrf.key {
+            return err!(LotteryErrorCode::WrongVrf);
+        }
+
+        if ctx.accounts.lottery_account.collateral_account != ctx.accounts.collateral_account.key() {
+            return err!(LotteryErrorCode::WrongCollateral);
+        }
+
         if !LotteryInstruction::can_be_called(ctx) {
             return err!(LotteryErrorCode::LotteryBlocked);
         }
@@ -74,8 +82,7 @@ impl LotteryInstruction<'_> {
         }
 
         let value: &[u128] = bytemuck::cast_slice(&result_buffer[..]);
-        let winning_ticket_id =
-            value[0] % ((ctx.accounts.lottery_account.total_tickets - 1) as u128);
+        let winning_ticket_id = value[0] % (ctx.accounts.lottery_account.total_tickets as u128);
         msg!("Current winning_ticket_id = {}", winning_ticket_id);
 
         let winning_ticket = Pubkey::find_program_address(
