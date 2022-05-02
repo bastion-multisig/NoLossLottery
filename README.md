@@ -27,6 +27,10 @@ Selects a random ticket number and saves it as the winner
 5. ### Payout
 Creates a ticket for the user, without a deposit in Solend
 
+6. ### Provide
+Creates one ticket for the user, called n times, where n is the size of the prize in tickets
+Work in a similar way to a deposit, only without a deposit in Solend
+
 ## Build, Test and Deploy
 First, install dependencies:
 
