@@ -1,14 +1,18 @@
 pub mod actions;
-pub use actions::*;
+pub mod errors;
+pub mod helpers;
 
-use crate::solana_program::entrypoint::ProgramResult;
-use crate::solana_program::native_token::LAMPORTS_PER_SOL;
+pub use actions::*;
+pub use errors::*;
+
 pub use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_lang::AccountsClose;
 use anchor_spl::token::{Mint, Token, TokenAccount};
+use solana_program::entrypoint::ProgramResult;
+use solana_program::program_pack::Pack;
 
-declare_id!("ACqyU5JmS1a7qWTCP9ckoG7A1GXFofS52nuoiq7bq4JF");
+declare_id!("AyUeCqxnM2k8cTJr5tMvf5rMvabJWwuvnJqeBvwCU6ES");
 
 const STATE_SEED: &[u8] = b"STATE";
 
@@ -16,181 +20,52 @@ const STATE_SEED: &[u8] = b"STATE";
 pub mod nolosslottery {
     use super::*;
 
-    pub fn init_lottery(ctx: Context<InitializeLottery>, bump: u8) -> ProgramResult {
+    pub fn init_lottery(
+        ctx: Context<InitializeLottery>,
+        bump: u8,
+        ticket_price: u64,
+        ctoken_mint: Pubkey,
+        vrf_account: Pubkey,
+        collateral_account: Pubkey,
+    ) -> ProgramResult {
         ctx.accounts.lottery_account.bump = bump;
-        ctx.accounts.lottery_account.total_tickets = 0;
+        ctx.accounts.lottery_account.ticket_price = ticket_price;
+        ctx.accounts.lottery_account.ctoken_mint = ctoken_mint;
+        ctx.accounts.lottery_account.vrf_account = vrf_account;
+        ctx.accounts.lottery_account.collateral_account = collateral_account;
+
+        msg!("Data stored");
         Ok(())
     }
 
     pub fn init_user_deposit(ctx: Context<InitializeDeposit>, bump: u8) -> ProgramResult {
         ctx.accounts.user_deposit_account.bump = bump;
         ctx.accounts.user_deposit_account.ticket_ids = vec![];
-        Ok(())
-    }
+        ctx.accounts.user_deposit_account.ctoken_mint = ctx.accounts.ctoken_mint.key().clone();
 
-    pub fn deposit(ctx: Context<Deposit>) -> ProgramResult {
-        // deposit to Solend
-        solana_program::program::invoke(
-            &spl_token::instruction::approve(
-                &ctx.accounts.token_program.to_account_info().key.clone(),
-                &ctx.accounts.source_liquidity.to_account_info().key.clone(),
-                &ctx.accounts.lending_program.to_account_info().key.clone(),
-                &ctx.accounts
-                    .transfer_authority
-                    .to_account_info()
-                    .key
-                    .clone(),
-                &[],
-                LAMPORTS_PER_SOL
-            )?,
-            ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
-        )
-        .unwrap();
-
-        solana_program::program::invoke(
-            &spl_token_lending::instruction::deposit_reserve_liquidity(
-                *ctx.accounts.lending_program.key,
-                LAMPORTS_PER_SOL,
-                ctx.accounts.source_liquidity.to_account_info().key.clone(),
-                ctx.accounts
-                    .destination_collateral_account
-                    .to_account_info()
-                    .key
-                    .clone(),
-                ctx.accounts.reserve.to_account_info().key.clone(),
-                ctx.accounts
-                    .reserve_liquidity_supply
-                    .to_account_info()
-                    .key
-                    .clone(),
-                ctx.accounts
-                    .reserve_collateral_mint
-                    .to_account_info()
-                    .key
-                    .clone(),
-                ctx.accounts.lending_market.to_account_info().key.clone(),
-                ctx.accounts
-                    .transfer_authority
-                    .to_account_info()
-                    .key
-                    .clone(),
-            ),
-            ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
-        )
-        .unwrap();
-
-        // change user state
-        ctx.accounts
-            .user_deposit_account
-            .ticket_ids
-            .push(ctx.accounts.lottery_account.total_tickets);
-
-        // new ticket
-        ctx.accounts.ticket_account.id = ctx.accounts.lottery_account.total_tickets;
-        ctx.accounts.ticket_account.owner = ctx.accounts.user_deposit_account.key();
-
-        // count the ticket
-        ctx.accounts.lottery_account.total_tickets += 1;
-
-        Ok(())
-    }
-
-    pub fn withdraw(ctx: Context<Withdraw>) -> ProgramResult {
-        // withdraw from Solend
-        solana_program::program::invoke(
-            &spl_token_lending::instruction::redeem_reserve_collateral(
-                *ctx.accounts.lending_program.key,
-                1 * (10_u64.pow(ctx.accounts.reserve_collateral_mint.decimals as u32)),
-                ctx.accounts
-                    .source_collateral_account
-                    .to_account_info()
-                    .key
-                    .clone(),
-                ctx.accounts
-                    .destination_liquidity_account
-                    .to_account_info()
-                    .key
-                    .clone(),
-                ctx.accounts.reserve.to_account_info().key.clone(),
-                ctx.accounts
-                    .reserve_collateral_mint
-                    .to_account_info()
-                    .key
-                    .clone(),
-                ctx.accounts
-                    .reserve_liquidity_supply
-                    .to_account_info()
-                    .key
-                    .clone(),
-                ctx.accounts.lending_market.to_account_info().key.clone(),
-                ctx.accounts
-                    .transfer_authority
-                    .to_account_info()
-                    .key
-                    .clone(),
-            ),
-            ToAccountInfos::to_account_infos(ctx.accounts).as_slice(),
-        )
-        .unwrap();
-
-        // remove ticket's id from the list of user tickets
-        let ticket_index = ctx
-            .accounts
-            .user_deposit_account
-            .ticket_ids
-            .iter()
-            .position(|&x| x == ctx.accounts.ticket_account.id)
-            .unwrap();
-        ctx.accounts
-            .user_deposit_account
-            .ticket_ids
-            .remove(ticket_index);
-
-        if ctx.accounts.last_ticket_account.id == ctx.accounts.ticket_account.id {
-            // if we need to delete the last ticket
-            // than the users are the same
-            // and we need to modify both in order for anchor
-            // to be able to save tha changes
-            ctx.accounts
-                .last_ticket_owner_account
-                .ticket_ids
-                .remove(ticket_index);
-        } else {
-            // if we have two different user
-            // then we must change ticket id data
-            let last_ticket_index = ctx
-                .accounts
-                .last_ticket_owner_account
-                .ticket_ids
-                .iter()
-                .position(|&x| x == ctx.accounts.last_ticket_account.id)
-                .unwrap();
-            ctx.accounts
-                .last_ticket_owner_account
-                .ticket_ids
-                .remove(last_ticket_index);
-
-            ctx.accounts.ticket_account.owner = ctx.accounts.last_ticket_account.owner;
-        }
-
-        // close user's ticket
-        ctx.accounts
-            .last_ticket_account
-            .close(ctx.accounts.sender.to_account_info())?;
-
-        ctx.accounts.lottery_account.total_tickets -= 1;
+        ctx.accounts.lottery_account.users += 1;
 
         Ok(())
     }
 
     #[access_control(ctx.accounts.validate(&ctx))]
-    pub fn init_state(ctx: Context<InitState>) -> Result<()> {
-        InitState::actuate(&ctx)
+    pub fn deposit(mut ctx: Context<Deposit>) -> Result<()> {
+        Deposit::process(&mut ctx)
+    }
+
+    #[access_control(ctx.accounts.validate(&ctx))]
+    pub fn withdraw(mut ctx: Context<Withdraw>) -> Result<()> {
+        Withdraw::process(&mut ctx)
+    }
+
+    #[access_control(ctx.accounts.validate(&ctx))]
+    pub fn init_state(ctx: Context<InitState>, max_result: u64) -> Result<()> {
+        InitState::process(&ctx, max_result)
     }
 
     #[access_control(ctx.accounts.validate(&ctx, &params))]
     pub fn update_result(ctx: Context<UpdateResult>, params: UpdateResultParams) -> ProgramResult {
-        UpdateResult::actuate(&ctx, &params)
+        UpdateResult::process(&ctx, &params)
     }
 
     #[access_control(ctx.accounts.validate(&ctx, &params))]
@@ -198,72 +73,41 @@ pub mod nolosslottery {
         ctx: Context<RequestResult>,
         params: RequestResultParams,
     ) -> ProgramResult {
-        RequestResult::actuate(&ctx, &params)
+        RequestResult::process(&ctx, &params)
     }
 
-    pub fn lottery(ctx: Context<LotteryInstruction>) -> ProgramResult {
-        if ctx.accounts.lottery_account.total_tickets == 0 {
-            return Ok(());
-        }
-
-        let mut prize_amount = (ctx.accounts.collateral_account.amount as i64
-            / 10_i64.pow(ctx.accounts.collateral_mint.decimals as u32)
-            - ctx.accounts.lottery_account.total_tickets as i64);
-
-        if prize_amount < 1 {
-            ctx.accounts.lottery_account.prize = 0;
-            return Ok(());
-        }
-
-        // TODO: create a function that generates a real random number
-        let winning_ticket_id = 0;
-
-        let winning_ticket = Pubkey::find_program_address(
-            &["ticket#".as_ref(), winning_ticket_id.to_string().as_ref()],
-            ctx.program_id,
-        )
-        .0;
-
-        ctx.accounts.lottery_account.winning_ticket = winning_ticket;
-        ctx.accounts.lottery_account.prize = prize_amount as u64;
-
-        Ok(())
+    #[access_control(ctx.accounts.validate(&ctx))]
+    pub fn lottery(mut ctx: Context<LotteryInstruction>) -> Result<()> {
+        LotteryInstruction::process(&mut ctx)
     }
 
-    pub fn payout(ctx: Context<PayoutInstruction>) -> Result<()> {
-        if ctx.accounts.lottery_account.prize < 1 {
-            ctx.accounts.lottery_account.winning_ticket = Pubkey::default();
-            return err!(LotteryErrorCode::EmptyPrize);
-        }
-        ctx.accounts.lottery_account.prize -= 1;
+    #[access_control(ctx.accounts.validate(&ctx))]
+    pub fn payout(mut ctx: Context<PayoutInstruction>) -> Result<()> {
+        PayoutInstruction::process(&mut ctx)
+    }
 
-        // change user state
-        ctx.accounts
-            .user_deposit_account
-            .ticket_ids
-            .push(ctx.accounts.lottery_account.total_tickets);
-
-        // new ticket
-        ctx.accounts.ticket_account.id = ctx.accounts.lottery_account.total_tickets;
-        ctx.accounts.ticket_account.owner = ctx.accounts.user_deposit_account.key();
-
-        // count the ticket
-        ctx.accounts.lottery_account.total_tickets += 1;
-
-        Ok(())
+    #[access_control(ctx.accounts.validate(&ctx))]
+    pub fn provide(mut ctx: Context<ProvideInstruction>, amount: u64) -> Result<()> {
+        ProvideInstruction::process(&mut ctx, amount)
     }
 }
 
 #[derive(Accounts)]
+#[instruction(bump: u8,
+              ticket_price: u64,
+              ctoken_mint: Pubkey,
+              vrf_account: Pubkey,
+              collateral_account: Pubkey
+)]
 pub struct InitializeLottery<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
         init,
-        seeds = ["lottery".as_ref()],
+        seeds = ["nolosslottery".as_ref(), ctoken_mint.key().as_ref()],
         bump,
         payer = signer,
-        space = 104 // 8 + 16 + 16 + 16 + 32 + 16
+        space = 8 + 1 + 8 + 32 + 8 + 8 + 32 + 32 + 32 + 8 + 8 + 8 + 8 + 8 + 1
     )]
     pub lottery_account: Box<Account<'info, Lottery>>,
     pub system_program: Program<'info, System>,
@@ -275,8 +119,23 @@ pub struct InitializeLottery<'info> {
 pub struct Lottery {
     pub bump: u8,
     pub total_tickets: u64,
+
+    // winning part
     pub winning_ticket: Pubkey,
+    pub winning_time: i64,
     pub prize: u64,
+
+    // parameters
+    pub ctoken_mint: Pubkey,
+    pub vrf_account: Pubkey,
+    pub collateral_account: Pubkey,
+    pub ticket_price: u64,
+
+    // info
+    pub users: u64,
+    pub liquidity_amount: u64,
+    pub last_call: i64,
+    pub is_blocked: bool,
 }
 
 #[derive(Accounts)]
@@ -286,12 +145,15 @@ pub struct InitializeDeposit<'info> {
     pub signer: Signer<'info>,
     #[account(
         init,
-        seeds = ["nolosslottery".as_ref(), signer.key().as_ref()],
+        seeds = ["lottery".as_ref(), ctoken_mint.key().as_ref(), signer.key().as_ref()],
         bump,
         payer = signer,
-        space = 8044 // 8 + 16 + 16 + (4 + 2000 * 4)
+        space = 8 + 1 + (4 + 2000 * 4) + 16 + 32
     )]
     pub user_deposit_account: Box<Account<'info, UserDeposit>>,
+    #[account(mut)]
+    pub lottery_account: Box<Account<'info, Lottery>>,
+    pub ctoken_mint: Box<Account<'info, Mint>>,
     pub system_program: Program<'info, System>,
 }
 
@@ -300,51 +162,12 @@ pub struct InitializeDeposit<'info> {
 pub struct UserDeposit {
     pub bump: u8,
     pub ticket_ids: Vec<u64>,
-}
 
-#[derive(Accounts)]
-pub struct Deposit<'info> {
-    // solend part
-    #[account(mut)]
-    pub source_liquidity: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    pub destination_collateral_account: Box<Account<'info, TokenAccount>>,
-    /// CHECK:
-    pub lending_program: AccountInfo<'info>,
-    /// CHECK:
-    #[account(mut)]
-    pub reserve: AccountInfo<'info>,
-    /// CHECK:
-    #[account(mut)]
-    pub reserve_liquidity_supply: AccountInfo<'info>,
-    #[account(mut)]
-    pub reserve_collateral_mint: Account<'info, Mint>,
-    /// CHECK:
-    pub lending_market: AccountInfo<'info>,
-    /// CHECK:
-    pub lending_market_authority: AccountInfo<'info>,
-    pub transfer_authority: Signer<'info>,
-    pub clock: Sysvar<'info, Clock>,
+    // winning part
+    pub winning_time: i64,
 
-    // lottery part
-    #[account(mut)]
-    pub user_deposit_account: Box<Account<'info, UserDeposit>>,
-    #[account(mut)]
-    pub lottery_account: Box<Account<'info, Lottery>>,
-    #[account(
-        init,
-        payer = sender,
-        space = 56, // 8 + 16 + 32,
-        seeds = ["ticket#".as_ref(), lottery_account.total_tickets.to_string().as_ref()],
-        bump
-    )]
-    pub ticket_account: Box<Account<'info, Ticket>>,
-
-    // authority part
-    #[account(mut)]
-    pub sender: Signer<'info>,
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
+    // parameters
+    pub ctoken_mint: Pubkey,
 }
 
 #[account]
@@ -352,85 +175,6 @@ pub struct Deposit<'info> {
 pub struct Ticket {
     pub id: u64,
     pub owner: Pubkey,
-}
-
-#[derive(Accounts)]
-pub struct Withdraw<'info> {
-    // solend part
-    #[account(mut)]
-    pub destination_liquidity_account: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    pub source_collateral_account: Box<Account<'info, TokenAccount>>,
-    /// CHECK:
-    pub lending_program: AccountInfo<'info>,
-    /// CHECK:
-    #[account(mut)]
-    pub reserve: AccountInfo<'info>,
-    /// CHECK:
-    #[account(mut)]
-    pub reserve_liquidity_supply: AccountInfo<'info>,
-    #[account(mut)]
-    pub reserve_collateral_mint: Account<'info, Mint>,
-    /// CHECK:
-    pub lending_market: AccountInfo<'info>,
-    /// CHECK:
-    pub lending_market_authority: AccountInfo<'info>,
-    pub transfer_authority: Signer<'info>,
-    pub clock: Sysvar<'info, Clock>,
-
-    // lottery part
-    #[account(mut)]
-    pub lottery_account: Box<Account<'info, Lottery>>,
-    #[account(mut)]
-    pub user_deposit_account: Box<Account<'info, UserDeposit>>,
-    #[account(mut)]
-    pub ticket_account: Box<Account<'info, Ticket>>,
-    #[account(mut)]
-    pub last_ticket_owner_account: Box<Account<'info, UserDeposit>>,
-    #[account(mut)]
-    pub last_ticket_account: Box<Account<'info, Ticket>>,
-
-    // authority part
-    #[account(mut)]
-    pub sender: Signer<'info>,
-    pub token_program: Program<'info, Token>,
-}
-
-// an instruction for the `lottery` endpoint
-#[derive(Accounts)]
-pub struct LotteryInstruction<'info> {
-    #[account(mut)]
-    pub lottery_account: Account<'info, Lottery>,
-    #[account(mut)]
-    pub collateral_mint: Account<'info, Mint>,
-    #[account(mut)]
-    pub collateral_account: Account<'info, TokenAccount>,
-}
-
-// an instruction to send the prize to the user
-#[derive(Accounts)]
-pub struct PayoutInstruction<'info> {
-    // lottery part
-    #[account(mut)]
-    pub user_deposit_account: Box<Account<'info, UserDeposit>>,
-    #[account(mut)]
-    pub lottery_account: Box<Account<'info, Lottery>>,
-
-    // tickets part
-    #[account(mut)]
-    pub sender: Signer<'info>,
-    #[account(
-        init,
-        payer = sender,
-        space = 56, // 8 + 16 + 32,
-        seeds = ["ticket#".as_ref(), lottery_account.total_tickets.to_string().as_ref()],
-        bump
-    )]
-    pub ticket_account: Box<Account<'info, Ticket>>,
-    pub system_program: Program<'info, System>,
-
-    #[account(mut)]
-    pub winning_ticket: Account<'info, Ticket>,
 }
 
 #[repr(packed)]
@@ -448,17 +192,4 @@ impl Default for VrfClient {
     fn default() -> Self {
         unsafe { std::mem::zeroed() }
     }
-}
-
-#[error_code]
-#[derive(Eq, PartialEq)]
-pub enum VrfErrorCode {
-    #[msg("Not a valid Switchboard VRF account")]
-    InvalidSwitchboardVrfAccount,
-}
-
-#[error_code]
-pub enum LotteryErrorCode {
-    #[msg("Empty prize")]
-    EmptyPrize,
 }
