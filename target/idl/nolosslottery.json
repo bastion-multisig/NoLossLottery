@@ -125,7 +125,7 @@
         },
         {
           "name": "transferAuthority",
-          "isMut": false,
+          "isMut": true,
           "isSigner": true
         },
         {
@@ -147,11 +147,6 @@
           "name": "ticketAccount",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "sender",
-          "isMut": true,
-          "isSigner": true
         },
         {
           "name": "tokenProgram",
@@ -759,6 +754,6 @@
     }
   ],
   "metadata": {
-    "address": "AyUeCqxnM2k8cTJr5tMvf5rMvabJWwuvnJqeBvwCU6ES"
+    "address": "yJBwRa3zSaet5HtC2Tv1B2whW1UgDwu7ft1faNqTvmj"
   }
 }

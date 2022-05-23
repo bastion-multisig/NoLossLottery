@@ -22,6 +22,7 @@ pub struct Deposit<'info> {
     pub lending_market: AccountInfo<'info>,
     /// CHECK:
     pub lending_market_authority: AccountInfo<'info>,
+    #[account(mut)]
     pub transfer_authority: Signer<'info>,
     pub clock: Sysvar<'info, Clock>,
 
@@ -32,7 +33,7 @@ pub struct Deposit<'info> {
     pub lottery_account: Box<Account<'info, Lottery>>,
     #[account(
     init,
-    payer = sender,
+    payer = transfer_authority,
     space = 56, // 8 + 16 + 32,
     seeds = ["ticket#".as_ref(),
     reserve_collateral_mint.key().as_ref(),
@@ -42,8 +43,6 @@ pub struct Deposit<'info> {
     pub ticket_account: Box<Account<'info, Ticket>>,
 
     // authority part
-    #[account(mut)]
-    pub sender: Signer<'info>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
@@ -64,7 +63,7 @@ impl Deposit<'_> {
         }
 
         if ctx.accounts.lottery_account.is_blocked {
-            return err!(LotteryErrorCode::DepositBlocked);
+            // return err!(LotteryErrorCode::DepositBlocked);
         }
 
         Ok(())

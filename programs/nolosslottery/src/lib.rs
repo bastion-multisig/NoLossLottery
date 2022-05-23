@@ -12,7 +12,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use solana_program::entrypoint::ProgramResult;
 use solana_program::program_pack::Pack;
 
-declare_id!("AyUeCqxnM2k8cTJr5tMvf5rMvabJWwuvnJqeBvwCU6ES");
+declare_id!("yJBwRa3zSaet5HtC2Tv1B2whW1UgDwu7ft1faNqTvmj");
 
 const STATE_SEED: &[u8] = b"STATE";
 

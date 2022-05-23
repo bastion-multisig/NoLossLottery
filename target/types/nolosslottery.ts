@@ -125,7 +125,7 @@ export type Nolosslottery = {
         },
         {
           "name": "transferAuthority",
-          "isMut": false,
+          "isMut": true,
           "isSigner": true
         },
         {
@@ -147,11 +147,6 @@ export type Nolosslottery = {
           "name": "ticketAccount",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "sender",
-          "isMut": true,
-          "isSigner": true
         },
         {
           "name": "tokenProgram",
@@ -887,7 +882,7 @@ export const IDL: Nolosslottery = {
         },
         {
           "name": "transferAuthority",
-          "isMut": false,
+          "isMut": true,
           "isSigner": true
         },
         {
@@ -909,11 +904,6 @@ export const IDL: Nolosslottery = {
           "name": "ticketAccount",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "sender",
-          "isMut": true,
-          "isSigner": true
         },
         {
           "name": "tokenProgram",

@@ -46,7 +46,7 @@ impl ProvideInstruction<'_> {
         }
 
         if ctx.accounts.lottery_account.is_blocked {
-            return err!(LotteryErrorCode::DepositBlocked);
+            // return err!(LotteryErrorCode::DepositBlocked);
         }
 
         Ok(())

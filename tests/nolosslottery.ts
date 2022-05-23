@@ -19,6 +19,7 @@ describe("nolosslottery",  () => {
             )
         )
     );
+    const sender_account = anchor.web3.Keypair.generate();
     const lending_program = new anchor.web3.PublicKey("ALend7Ketfx5bxh6ghsCDXAoDrhvEmsXT3cynB6aPLgx");
     const reserve = new anchor.web3.PublicKey("5VVLD7BQp8y3bTgyF5ezm1ResyMTR3PhYsT4iHFU8Sxz");
     const reserve_collateral_mint = new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf");
@@ -28,7 +29,7 @@ describe("nolosslottery",  () => {
     let lending_market_authority_bump;
 
     const vrf_account = new anchor.web3.PublicKey("6w5aF8BWXokuWGGrENUmDeTcgBxtGm3AWwHJi9HJ19W3");
-
+    const sender = new anchor.web3.PublicKey("AD31rHMdU6Xyt8oDY5C3njQwkMaQbQgAnK2EvYb1jo3d");
     it('Initializes program state', async () => {
         [lending_market_authority, lending_market_authority_bump] = await anchor.web3.PublicKey.findProgramAddress(
             [lending_market.toBuffer()],
@@ -43,11 +44,13 @@ describe("nolosslottery",  () => {
                 payer.publicKey // owner,
             );
 
+        await provider.connection.requestAirdrop(sender_account.publicKey, anchor.web3.LAMPORTS_PER_SOL)
+
         source_token = await token.getOrCreateAssociatedTokenAccount(
                 provider.connection,
                 payer, // fee payer
                 token.NATIVE_MINT, // mint
-                payer.publicKey // owner,
+                sender_account.publicKey // owner,
             );
 
         const solTransferTransaction = new anchor.web3.Transaction()
@@ -55,7 +58,7 @@ describe("nolosslottery",  () => {
                 anchor.web3.SystemProgram.transfer({
                     fromPubkey: payer.publicKey,
                     toPubkey: source_token.address,
-                    lamports: anchor.web3.LAMPORTS_PER_SOL
+                    lamports: anchor.web3.LAMPORTS_PER_SOL * 3
                 }),
                 token.createSyncNativeInstruction(
                     source_token.address
@@ -102,7 +105,7 @@ describe("nolosslottery",  () => {
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("lottery"),
                     reserve_collateral_mint.toBuffer(),
-                    payer.publicKey.toBuffer(),],
+                    sender_account.publicKey.toBuffer(),],
                 nolosslottery.programId
             );
         const [lotteryAccount] =
@@ -116,12 +119,14 @@ describe("nolosslottery",  () => {
                 userAccountBump,
                 {
                     accounts: {
-                        signer: payer.publicKey,
+                        signer: sender_account.publicKey,
                         userDepositAccount: userAccount,
                         lotteryAccount: lotteryAccount,
                         ctokenMint: reserve_collateral_mint,
                         systemProgram: anchor.web3.SystemProgram.programId,
                     },
+
+                    signers: [sender_account]
                 });
         } catch (e) { } // already initialized
     });
@@ -131,7 +136,7 @@ describe("nolosslottery",  () => {
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("lottery"),
                     reserve_collateral_mint.toBuffer(),
-                    payer.publicKey.toBuffer(),],
+                    sender_account.publicKey.toBuffer(),],
                 nolosslottery.programId
             );
         let [lotteryAccount] =
@@ -162,17 +167,17 @@ describe("nolosslottery",  () => {
                 reserveCollateralMint: reserve_collateral_mint,
                 reserveLiquiditySupply: reserve_liquidity_supply,
                 lendingMarketAuthority: lending_market_authority,
-                transferAuthority: payer.publicKey,
+                transferAuthority: sender_account.publicKey,
                 clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
 
                 userDepositAccount: userAccount,
                 lotteryAccount: lotteryAccount,
                 ticketAccount: ticketAccount,
 
-                sender: payer.publicKey, // mint authority
                 tokenProgram: token.TOKEN_PROGRAM_ID,
                 systemProgram: anchor.web3.SystemProgram.programId,
             },
+            signers: [sender_account]
         })
 
         lottery_state = await nolosslottery
@@ -196,17 +201,17 @@ describe("nolosslottery",  () => {
                 reserveCollateralMint: reserve_collateral_mint,
                 reserveLiquiditySupply: reserve_liquidity_supply,
                 lendingMarketAuthority: lending_market_authority,
-                transferAuthority: payer.publicKey,
+                transferAuthority: sender_account.publicKey,
                 clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
 
                 userDepositAccount: userAccount,
                 lotteryAccount: lotteryAccount,
 
-                sender: payer.publicKey, // mint authority
                 ticketAccount: ticketAccount,
                 tokenProgram: token.TOKEN_PROGRAM_ID,
                 systemProgram: anchor.web3.SystemProgram.programId,
             },
+            signers: [sender_account]
         })
         console.log("TX:", tx)
 
@@ -236,24 +241,27 @@ describe("nolosslottery",  () => {
 
         let tx = await nolosslottery.rpc.provide(
             new anchor.BN(0.5 * anchor.web3.LAMPORTS_PER_SOL),
-            {accounts: {
-                sourceLiquidity: source_token.address,
-                destinationCollateralAccount: destinationCollateralAccount_token.address,
-                lendingProgram: lending_program,
-                lendingMarket: lending_market,
-                reserve: reserve,
-                reserveCollateralMint: reserve_collateral_mint,
-                reserveLiquiditySupply: reserve_liquidity_supply,
-                lendingMarketAuthority: lending_market_authority,
-                transferAuthority: payer.publicKey,
-                clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+            {
+                accounts: {
+                    sourceLiquidity: source_token.address,
+                    destinationCollateralAccount: destinationCollateralAccount_token.address,
+                    lendingProgram: lending_program,
+                    lendingMarket: lending_market,
+                    reserve: reserve,
+                    reserveCollateralMint: reserve_collateral_mint,
+                    reserveLiquiditySupply: reserve_liquidity_supply,
+                    lendingMarketAuthority: lending_market_authority,
+                    transferAuthority: sender_account.publicKey,
+                    clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
 
-                lotteryAccount: lotteryAccount,
+                    lotteryAccount: lotteryAccount,
 
-                tokenProgram: token.TOKEN_PROGRAM_ID,
-                systemProgram: anchor.web3.SystemProgram.programId,
-            },
-        })
+                    tokenProgram: token.TOKEN_PROGRAM_ID,
+                    systemProgram: anchor.web3.SystemProgram.programId,
+                },
+                signers: [sender_account]
+            }
+    )
         console.log("TX:", tx)
 
         lottery_state = await nolosslottery
@@ -272,7 +280,7 @@ describe("nolosslottery",  () => {
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("lottery"),
                     reserve_collateral_mint.toBuffer(),
-                    payer.publicKey.toBuffer(),],
+                    sender_account.publicKey.toBuffer(),],
                 nolosslottery.programId
             );
         const [lotteryAccount] =
@@ -322,7 +330,7 @@ describe("nolosslottery",  () => {
                 lastTicketOwnerAccount: lastTicketOwnerAccount,
                 lastTicketAccount: lastTicketAccount,
 
-                sender: payer.publicKey,
+                sender: sender,
                 tokenProgram: token.TOKEN_PROGRAM_ID,
             },
         })
@@ -373,7 +381,7 @@ describe("nolosslottery",  () => {
             await anchor.web3.PublicKey.findProgramAddress(
                 [anchor.utils.bytes.utf8.encode("lottery"),
                     reserve_collateral_mint.toBuffer(),
-                    payer.publicKey.toBuffer(),],
+                    sender_account.publicKey.toBuffer(),],
                 nolosslottery.programId
             );
 

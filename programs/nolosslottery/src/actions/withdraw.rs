@@ -59,7 +59,7 @@ impl Withdraw<'_> {
         }
 
         if ctx.accounts.lottery_account.is_blocked {
-            return err!(LotteryErrorCode::WithdrawBlocked);
+            // return err!(LotteryErrorCode::WithdrawBlocked);
         }
 
         Ok(())

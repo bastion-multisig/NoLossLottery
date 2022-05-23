@@ -30,7 +30,7 @@ impl LotteryInstruction<'_> {
         }
 
         if !LotteryInstruction::can_be_called(ctx) {
-            return err!(LotteryErrorCode::LotteryBlocked);
+            // return err!(LotteryErrorCode::LotteryBlocked);
         }
 
         Ok(())
