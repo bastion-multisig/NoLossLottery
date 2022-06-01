@@ -16,7 +16,6 @@ pub struct LotteryInstruction<'info> {
     pub reserve: AccountInfo<'info>,
     /// CHECK:
     pub vrf: AccountInfo<'info>,
-    pub clock: Sysvar<'info, Clock>,
 }
 
 impl LotteryInstruction<'_> {
@@ -40,7 +39,6 @@ impl LotteryInstruction<'_> {
         if ctx.accounts.lottery_account.last_call != 0
             && helpers::less_than_week(
             ctx.accounts.lottery_account.last_call,
-            &ctx.accounts.clock.to_account_info(),
         )
         {
             return false;
@@ -70,7 +68,7 @@ impl LotteryInstruction<'_> {
             return Ok(());
         }
 
-        let current_time = helpers::now(&ctx.accounts.clock.to_account_info());
+        let current_time = helpers::now();
 
         let vrf_account_info = &ctx.accounts.vrf;
         let vrf = VrfAccountData::new(vrf_account_info)?;

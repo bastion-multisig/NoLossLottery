@@ -16,11 +16,6 @@
           "isSigner": false
         },
         {
-          "name": "clock",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -426,11 +421,6 @@
           "name": "vrf",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "clock",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": []
@@ -763,6 +753,6 @@
     }
   ],
   "metadata": {
-    "address": "ipCsLUiM8kaxrS8bWy1wuqg9DSvNdvSD8S9LqTpSb6V"
+    "address": "Ag4LwmqpKCj8dtpf23ChTp25LukktDo9coUbtDAHeh6e"
   }
 }

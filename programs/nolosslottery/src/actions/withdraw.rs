@@ -70,7 +70,6 @@ impl Withdraw<'_> {
             ctx.accounts.lottery_account.ticket_price,
             &ctx.accounts.reserve,
             ctx.accounts.user_deposit_account.winning_time,
-            &ctx.accounts.clock.to_account_info(),
         )
         .unwrap();
 

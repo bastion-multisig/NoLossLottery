@@ -22,12 +22,11 @@ pub fn get_ticket_withdraw_price(
     liquidity_amount: u64,
     reserve: &AccountInfo,
     last_winning_time: i64,
-    clock: &AccountInfo,
 ) -> Result<u64> {
     let mut collateral_amount = get_collateral(liquidity_amount, reserve)?;
 
     // withdraw lockup
-    if less_than_week(last_winning_time, clock) {
+    if less_than_week(last_winning_time) {
         collateral_amount = (collateral_amount as f64 * 0.85) as u64;
     }
 
@@ -38,14 +37,12 @@ pub fn get_ticket_withdraw_price(
 }
 
 
-pub fn now(clock: &AccountInfo) -> i64 {
-    Clock::from_account_info(&clock.to_account_info())
-        .unwrap()
-        .unix_timestamp as i64
+pub fn now() -> i64 {
+    Clock::get().unwrap().unix_timestamp
 }
 
-pub fn less_than_week(time: i64, clock: &AccountInfo) -> bool {
+pub fn less_than_week(time: i64) -> bool {
     time > 0
         && time
-        < (now(clock) + 7 * 24 * 60 * 60)
+        < (now() + 7 * 24 * 60 * 60)
 }

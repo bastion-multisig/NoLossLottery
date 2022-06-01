@@ -12,7 +12,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use solana_program::entrypoint::ProgramResult;
 use solana_program::program_pack::Pack;
 
-declare_id!("ipCsLUiM8kaxrS8bWy1wuqg9DSvNdvSD8S9LqTpSb6V");
+declare_id!("Ag4LwmqpKCj8dtpf23ChTp25LukktDo9coUbtDAHeh6e");
 
 const STATE_SEED: &[u8] = b"STATE";
 
@@ -34,7 +34,7 @@ pub mod nolosslottery {
         ctx.accounts.lottery_account.vrf_account = vrf_account;
         ctx.accounts.lottery_account.collateral_account = collateral_account;
         ctx.accounts.lottery_account.winning_time =
-            helpers::now(&ctx.accounts.clock.to_account_info());
+            helpers::now();
 
         msg!("Data stored");
         Ok(())
@@ -112,7 +112,6 @@ pub struct InitializeLottery<'info> {
     space = 8 + 1 + 8 + 32 + 8 + 8 + 32 + 32 + 32 + 8 + 8 + 8 + 8 + 8 + 1
     )]
     pub lottery_account: Box<Account<'info, Lottery>>,
-    pub clock: Sysvar<'info, Clock>,
     pub system_program: Program<'info, System>,
 }
 

@@ -95,10 +95,10 @@ describe("nolosslottery",  () => {
                         signer: payer.publicKey,
                         lotteryAccount: lotteryAccount,
                         systemProgram: anchor.web3.SystemProgram.programId,
-                        clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
                     },
                 });
         } catch (e) { } // already initialized
+        console.log("LOTTERY WINNING TIME: ", (await nolosslottery.account.lottery.fetch(lotteryAccount)).winningTime.toString())
     })
 
     it("Initializes user's state", async () => {
@@ -238,9 +238,6 @@ describe("nolosslottery",  () => {
         )
         console.log("TX:", tx)
 
-        lottery_state = await nolosslottery
-            .account.lottery.fetch(lotteryAccount);
-
         console.log("Collateral balance: ", (await nolosslottery
             .provider.connection.getTokenAccountBalance(destinationCollateralAccount_token.address)).value.uiAmount);
         console.log("User SOL balance: ", (await nolosslottery
@@ -339,7 +336,6 @@ describe("nolosslottery",  () => {
                 collateralAccount: destinationCollateralAccount_token.address,
                 reserve: reserve,
                 vrf: vrf_account,
-                clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
             },
         })
         console.log("TX:", tx);
