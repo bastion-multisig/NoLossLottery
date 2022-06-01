@@ -98,7 +98,7 @@ describe("nolosslottery",  () => {
                     },
                 });
         } catch (e) { } // already initialized
-        console.log("LOTTERY WINNING TIME: ", (await nolosslottery.account.lottery.fetch(lotteryAccount)).winningTime.toString())
+        console.log("LOTTERY WINNING TIME: ", (await nolosslottery.account.lottery.fetch(lotteryAccount)).lastCall.toString())
     })
 
     it("Initializes user's state", async () => {
