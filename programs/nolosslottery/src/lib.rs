@@ -12,7 +12,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use solana_program::entrypoint::ProgramResult;
 use solana_program::program_pack::Pack;
 
-declare_id!("yJBwRa3zSaet5HtC2Tv1B2whW1UgDwu7ft1faNqTvmj");
+declare_id!("ipCsLUiM8kaxrS8bWy1wuqg9DSvNdvSD8S9LqTpSb6V");
 
 const STATE_SEED: &[u8] = b"STATE";
 
@@ -33,6 +33,8 @@ pub mod nolosslottery {
         ctx.accounts.lottery_account.ctoken_mint = ctoken_mint;
         ctx.accounts.lottery_account.vrf_account = vrf_account;
         ctx.accounts.lottery_account.collateral_account = collateral_account;
+        ctx.accounts.lottery_account.winning_time =
+            helpers::now(&ctx.accounts.clock.to_account_info());
 
         msg!("Data stored");
         Ok(())
@@ -94,22 +96,23 @@ pub mod nolosslottery {
 
 #[derive(Accounts)]
 #[instruction(bump: u8,
-              ticket_price: u64,
-              ctoken_mint: Pubkey,
-              vrf_account: Pubkey,
-              collateral_account: Pubkey
+ticket_price: u64,
+ctoken_mint: Pubkey,
+vrf_account: Pubkey,
+collateral_account: Pubkey
 )]
 pub struct InitializeLottery<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
-        init,
-        seeds = ["nolosslottery".as_ref(), ctoken_mint.key().as_ref()],
-        bump,
-        payer = signer,
-        space = 8 + 1 + 8 + 32 + 8 + 8 + 32 + 32 + 32 + 8 + 8 + 8 + 8 + 8 + 1
+    init,
+    seeds = ["nolosslottery".as_ref(), ctoken_mint.key().as_ref()],
+    bump,
+    payer = signer,
+    space = 8 + 1 + 8 + 32 + 8 + 8 + 32 + 32 + 32 + 8 + 8 + 8 + 8 + 8 + 1
     )]
     pub lottery_account: Box<Account<'info, Lottery>>,
+    pub clock: Sysvar<'info, Clock>,
     pub system_program: Program<'info, System>,
 }
 
@@ -133,6 +136,7 @@ pub struct Lottery {
 
     // info
     pub users: u64,
+    pub draw_number: u64,
     pub liquidity_amount: u64,
     pub last_call: i64,
     pub is_blocked: bool,
@@ -144,11 +148,11 @@ pub struct InitializeDeposit<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
-        init,
-        seeds = ["lottery".as_ref(), ctoken_mint.key().as_ref(), signer.key().as_ref()],
-        bump,
-        payer = signer,
-        space = 8 + 1 + (4 + 2000 * 4) + 16 + 32
+    init,
+    seeds = ["lottery".as_ref(), ctoken_mint.key().as_ref(), signer.key().as_ref()],
+    bump,
+    payer = signer,
+    space = 8 + 1 + (4 + 2000 * 4) + 16 + 32
     )]
     pub user_deposit_account: Box<Account<'info, UserDeposit>>,
     #[account(mut)]

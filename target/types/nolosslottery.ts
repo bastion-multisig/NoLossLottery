@@ -16,6 +16,11 @@ export type Nolosslottery = {
           "isSigner": false
         },
         {
+          "name": "clock",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -587,6 +592,10 @@ export type Nolosslottery = {
           },
           {
             "name": "users",
+            "type": "u64"
+          },
+          {
+            "name": "drawNumber",
             "type": "u64"
           },
           {
@@ -773,6 +782,11 @@ export const IDL: Nolosslottery = {
           "isSigner": false
         },
         {
+          "name": "clock",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -1344,6 +1358,10 @@ export const IDL: Nolosslottery = {
           },
           {
             "name": "users",
+            "type": "u64"
+          },
+          {
+            "name": "drawNumber",
             "type": "u64"
           },
           {

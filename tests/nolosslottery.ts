@@ -95,6 +95,7 @@ describe("nolosslottery",  () => {
                         signer: payer.publicKey,
                         lotteryAccount: lotteryAccount,
                         systemProgram: anchor.web3.SystemProgram.programId,
+                        clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
                     },
                 });
         } catch (e) { } // already initialized
@@ -234,7 +235,7 @@ describe("nolosslottery",  () => {
                 },
                 signers: [sender_account]
             }
-    )
+        )
         console.log("TX:", tx)
 
         lottery_state = await nolosslottery

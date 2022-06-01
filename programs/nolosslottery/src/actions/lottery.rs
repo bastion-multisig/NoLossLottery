@@ -39,9 +39,9 @@ impl LotteryInstruction<'_> {
     fn can_be_called(ctx: &Context<Self>) -> bool {
         if ctx.accounts.lottery_account.last_call != 0
             && helpers::less_than_week(
-                ctx.accounts.lottery_account.last_call,
-                &ctx.accounts.clock.to_account_info(),
-            )
+            ctx.accounts.lottery_account.last_call,
+            &ctx.accounts.clock.to_account_info(),
+        )
         {
             return false;
         }
@@ -70,9 +70,7 @@ impl LotteryInstruction<'_> {
             return Ok(());
         }
 
-        let current_time = Clock::from_account_info(&ctx.accounts.clock.to_account_info())
-            .unwrap()
-            .unix_timestamp as i64;
+        let current_time = helpers::now(&ctx.accounts.clock.to_account_info());
 
         let vrf_account_info = &ctx.accounts.vrf;
         let vrf = VrfAccountData::new(vrf_account_info)?;
@@ -93,7 +91,7 @@ impl LotteryInstruction<'_> {
             ],
             ctx.program_id,
         )
-        .0;
+            .0;
 
         // this field will be used for the validation of lottery call
         ctx.accounts.lottery_account.winning_time = current_time;
@@ -108,6 +106,9 @@ impl LotteryInstruction<'_> {
 
         // save the prize amount
         ctx.accounts.lottery_account.prize = prize_amount;
+
+        // one more draw
+        ctx.accounts.lottery_account.draw_number += 1;
 
         Ok(())
     }

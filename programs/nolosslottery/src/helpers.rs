@@ -37,11 +37,15 @@ pub fn get_ticket_withdraw_price(
     Ok(collateral_amount)
 }
 
+
+pub fn now(clock: &AccountInfo) -> i64 {
+    Clock::from_account_info(&clock.to_account_info())
+        .unwrap()
+        .unix_timestamp as i64
+}
+
 pub fn less_than_week(time: i64, clock: &AccountInfo) -> bool {
     time > 0
         && time
-            < (Clock::from_account_info(&clock.to_account_info())
-                .unwrap()
-                .unix_timestamp as i64
-                + 7 * 24 * 60 * 60)
+        < (now(clock) + 7 * 24 * 60 * 60)
 }

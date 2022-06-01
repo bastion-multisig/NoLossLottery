@@ -16,6 +16,11 @@
           "isSigner": false
         },
         {
+          "name": "clock",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -590,6 +595,10 @@
             "type": "u64"
           },
           {
+            "name": "drawNumber",
+            "type": "u64"
+          },
+          {
             "name": "liquidityAmount",
             "type": "u64"
           },
@@ -754,6 +763,6 @@
     }
   ],
   "metadata": {
-    "address": "yJBwRa3zSaet5HtC2Tv1B2whW1UgDwu7ft1faNqTvmj"
+    "address": "ipCsLUiM8kaxrS8bWy1wuqg9DSvNdvSD8S9LqTpSb6V"
   }
 }
