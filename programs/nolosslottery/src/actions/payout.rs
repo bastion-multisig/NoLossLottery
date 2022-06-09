@@ -59,6 +59,7 @@ impl PayoutInstruction<'_> {
             .user_deposit_account
             .ticket_ids
             .push(ctx.accounts.lottery_account.total_tickets);
+        ctx.accounts.user_deposit_account.total_prize += 1;
 
         // new ticket
         ctx.accounts.ticket_account.id = ctx.accounts.lottery_account.total_tickets;

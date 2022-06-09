@@ -623,6 +623,10 @@
             "type": "i64"
           },
           {
+            "name": "totalPrize",
+            "type": "u64"
+          },
+          {
             "name": "ctokenMint",
             "type": "publicKey"
           }
@@ -753,6 +757,6 @@
     }
   ],
   "metadata": {
-    "address": "4EhDYPWxypecvZV4v9FbaExoAUmiR38sCUHX4BQYhW4W"
+    "address": "8Ni7KnRuCheLs1hMrCDBJJFhER2d7VTapNdEn6jiSiJo"
   }
 }

@@ -623,6 +623,10 @@ export type Nolosslottery = {
             "type": "i64"
           },
           {
+            "name": "totalPrize",
+            "type": "u64"
+          },
+          {
             "name": "ctokenMint",
             "type": "publicKey"
           }
@@ -1377,6 +1381,10 @@ export const IDL: Nolosslottery = {
           {
             "name": "winningTime",
             "type": "i64"
+          },
+          {
+            "name": "totalPrize",
+            "type": "u64"
           },
           {
             "name": "ctokenMint",

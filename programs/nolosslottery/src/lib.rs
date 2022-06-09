@@ -12,7 +12,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use solana_program::entrypoint::ProgramResult;
 use solana_program::program_pack::Pack;
 
-declare_id!("4EhDYPWxypecvZV4v9FbaExoAUmiR38sCUHX4BQYhW4W");
+declare_id!("8Ni7KnRuCheLs1hMrCDBJJFhER2d7VTapNdEn6jiSiJo");
 
 const STATE_SEED: &[u8] = b"STATE";
 
@@ -168,6 +168,7 @@ pub struct UserDeposit {
 
     // winning part
     pub winning_time: i64,
+    pub total_prize: u64,
 
     // parameters
     pub ctoken_mint: Pubkey,
