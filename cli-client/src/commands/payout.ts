@@ -1,7 +1,7 @@
 import type {Arguments, CommandBuilder} from 'yargs';
 import * as anchor from "@project-serum/anchor";
 import { Nolosslottery } from "../types/nolosslottery";
-import {NodeWallet} from "@project-serum/anchor/dist/cjs/provider";
+import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
 
 type Options = {
     key: string;
@@ -11,7 +11,8 @@ const DEVNET = "https://api.devnet.solana.com"
 
 export const builder: CommandBuilder<Options, Options> = (yargs) =>
     yargs
-        .positional('key', { type: 'string', demandOption: true });
+        .positional('key', { type: 'string', demandOption: true })
+
 
 export const handler = async (argv: Arguments<Options>): Promise<void> => {
     const payer = anchor.web3.Keypair.fromSecretKey(
@@ -23,58 +24,79 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
             )
         )
     );
-    const provider = new anchor.Provider(
-        new anchor.web3.Connection(DEVNET, anchor.Provider.defaultOptions().commitment),
+
+    const provider = new anchor.AnchorProvider(
+        new anchor.web3.Connection(DEVNET, anchor.AnchorProvider.defaultOptions().commitment),
         new NodeWallet(payer),
-        anchor.Provider.defaultOptions(),
+        anchor.AnchorProvider.defaultOptions(),
     );
     anchor.setProvider(provider);
 
+    const reserve_collateral_mint = new anchor.web3.PublicKey("FzwZWRMc3GCqjSrcpVX3ueJc6UpcV6iWWb7ZMsTXE3Gf");
+
     const nolosslottery = anchor.workspace.Nolosslottery as anchor.Program<Nolosslottery>;
 
-    const sourceCollateralAccount = new anchor.web3.PublicKey("9wBciX5pXv7ttGiHYtuaLAJGnFbLe7JjUtR4ZL4QdC4Z")
-    let [lotteryAccount, _lotteryAccountBump] =
-        await anchor.web3.PublicKey.findProgramAddress(
-            [anchor.utils.bytes.utf8.encode("lottery")],
-            nolosslottery.programId
-        );
+    console.log("Payout..........")
 
-    console.log("Payout....")
-
-    let lottery_state = await nolosslottery
-        .account.lottery.fetch(lotteryAccount);
-
-    if (lottery_state.winningTicket === undefined) {
-        console.log("No winner!");
-        process.exit(1)
-    }
-
-    if (lottery_state.prize.toString() === "0" || lottery_state.prize === undefined) {
-        console.log("No prize!");
-        process.exit(1)
-    }
-
-    const [userAccount, _userAccountBump] =
+    const [lotteryAccount] =
         await anchor.web3.PublicKey.findProgramAddress(
             [anchor.utils.bytes.utf8.encode("nolosslottery"),
-                payer.publicKey.toBuffer(),],
+                reserve_collateral_mint.toBuffer()],
             nolosslottery.programId
         );
 
-    let [ticketAccount, _ticketAccountBump] =
-        await anchor.web3.PublicKey.findProgramAddress([anchor.utils.bytes.utf8.encode("ticket#"), anchor.utils.bytes.utf8.encode(lottery_state.totalTickets.toString())], nolosslottery.programId);
+    let lotteryState = await nolosslottery.account.lottery.fetch(lotteryAccount);
+    const winningTicket = await nolosslottery.account.ticket.fetch(lotteryState.winningTicket);
 
-    let tx = await nolosslottery.rpc.payout({
-        accounts: {
-            winningTicket: lottery_state.winningTicket,
-            lotteryAccount: lotteryAccount,
-            userDepositAccount: userAccount,
-            ticketAccount: ticketAccount,
-            sender: payer.publicKey, // mint authority
-            systemProgram: anchor.web3.SystemProgram.programId,
-        },
-    })
+    let transaction = new anchor.web3.Transaction();
 
-    console.log("Prize: ", lottery_state.prize.toString())
-    console.log(`TX: https://explorer.solana.com/tx/${tx}?cluster=devnet`)
+    let prize = lotteryState.prize.toNumber();
+    let price = lotteryState.ticketPrice.toNumber();
+    let i = 0;
+    while (prize >= price) {
+        let [ticketAccount] =
+            await anchor.web3.PublicKey.findProgramAddress(
+                [anchor.utils.bytes.utf8.encode("ticket#"),
+                    reserve_collateral_mint.toBuffer(),
+                    anchor.utils.bytes.utf8.encode(lotteryState.totalTickets.addn(i).toString())],
+                nolosslottery.programId);
+
+        transaction.add(
+            nolosslottery.instruction.payout({
+                accounts: {
+                    winningTicket: lotteryState.winningTicket,
+                    lotteryAccount: lotteryAccount,
+                    userDepositAccount: winningTicket.owner,
+                    ticketAccount: ticketAccount,
+                    sender: payer.publicKey,
+                    systemProgram: anchor.web3.SystemProgram.programId,
+                },
+            })
+        )
+
+        if ((i % 10) == 0) {
+            const tx = await anchor.web3.sendAndConfirmTransaction(
+                provider.connection,
+                transaction,
+                [payer],
+                { commitment: 'confirmed' }
+            );
+            console.log("Chunk: ", i)
+            console.log("TX:", tx)
+            transaction = new anchor.web3.Transaction();
+        }
+
+        prize -= price;
+        i++;
+    }
+    console.log("Sent ", i, " tickets")
+    console.log("To ", winningTicket.owner.toString())
+
+    const tx = await anchor.web3.sendAndConfirmTransaction(
+        provider.connection,
+        transaction,
+        [payer],
+        { commitment: 'confirmed' }
+    );
+    console.log("TX:", tx)
 };

@@ -28,6 +28,22 @@ exports.IDL = {
                 {
                     "name": "bump",
                     "type": "u8"
+                },
+                {
+                    "name": "ticketPrice",
+                    "type": "u64"
+                },
+                {
+                    "name": "ctokenMint",
+                    "type": "publicKey"
+                },
+                {
+                    "name": "vrfAccount",
+                    "type": "publicKey"
+                },
+                {
+                    "name": "collateralAccount",
+                    "type": "publicKey"
                 }
             ]
         },
@@ -42,6 +58,16 @@ exports.IDL = {
                 {
                     "name": "userDepositAccount",
                     "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "lotteryAccount",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "ctokenMint",
+                    "isMut": false,
                     "isSigner": false
                 },
                 {
@@ -102,7 +128,7 @@ exports.IDL = {
                 },
                 {
                     "name": "transferAuthority",
-                    "isMut": false,
+                    "isMut": true,
                     "isSigner": true
                 },
                 {
@@ -124,11 +150,6 @@ exports.IDL = {
                     "name": "ticketAccount",
                     "isMut": true,
                     "isSigner": false
-                },
-                {
-                    "name": "sender",
-                    "isMut": true,
-                    "isSigner": true
                 },
                 {
                     "name": "tokenProgram",
@@ -263,7 +284,12 @@ exports.IDL = {
                     "isSigner": false
                 }
             ],
-            "args": []
+            "args": [
+                {
+                    "name": "maxResult",
+                    "type": "u64"
+                }
+            ]
         },
         {
             "name": "updateResult",
@@ -388,6 +414,16 @@ exports.IDL = {
                     "name": "collateralAccount",
                     "isMut": true,
                     "isSigner": false
+                },
+                {
+                    "name": "reserve",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "vrf",
+                    "isMut": false,
+                    "isSigner": false
                 }
             ],
             "args": []
@@ -427,6 +463,82 @@ exports.IDL = {
                 }
             ],
             "args": []
+        },
+        {
+            "name": "provide",
+            "accounts": [
+                {
+                    "name": "sourceLiquidity",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "destinationCollateralAccount",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "lendingProgram",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "reserve",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "reserveLiquiditySupply",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "reserveCollateralMint",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "lendingMarket",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "lendingMarketAuthority",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "transferAuthority",
+                    "isMut": false,
+                    "isSigner": true
+                },
+                {
+                    "name": "clock",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "lotteryAccount",
+                    "isMut": true,
+                    "isSigner": false
+                },
+                {
+                    "name": "tokenProgram",
+                    "isMut": false,
+                    "isSigner": false
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false
+                }
+            ],
+            "args": [
+                {
+                    "name": "amount",
+                    "type": "u64"
+                }
+            ]
         }
     ],
     "accounts": [
@@ -448,8 +560,48 @@ exports.IDL = {
                         "type": "publicKey"
                     },
                     {
+                        "name": "winningTime",
+                        "type": "i64"
+                    },
+                    {
                         "name": "prize",
                         "type": "u64"
+                    },
+                    {
+                        "name": "ctokenMint",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "vrfAccount",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "collateralAccount",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "ticketPrice",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "users",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "drawNumber",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "liquidityAmount",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "lastCall",
+                        "type": "i64"
+                    },
+                    {
+                        "name": "isBlocked",
+                        "type": "bool"
                     }
                 ]
             }
@@ -468,6 +620,18 @@ exports.IDL = {
                         "type": {
                             "vec": "u64"
                         }
+                    },
+                    {
+                        "name": "winningTime",
+                        "type": "i64"
+                    },
+                    {
+                        "name": "totalPrize",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "ctokenMint",
+                        "type": "publicKey"
                     }
                 ]
             }
@@ -572,6 +736,24 @@ exports.IDL = {
                 "variants": [
                     {
                         "name": "EmptyPrize"
+                    },
+                    {
+                        "name": "WrongPool"
+                    },
+                    {
+                        "name": "LotteryBlocked"
+                    },
+                    {
+                        "name": "DepositBlocked"
+                    },
+                    {
+                        "name": "WithdrawBlocked"
+                    },
+                    {
+                        "name": "WrongVrf"
+                    },
+                    {
+                        "name": "WrongCollateral"
                     }
                 ]
             }

@@ -1,0 +1,10 @@
+{
+  "queue": "43gdiuKG6T4EJUQQm5Udme9AiCDPKMbijtTgPVvw3JyV",
+  "queueAuthority": "AD31rHMdU6Xyt8oDY5C3njQwkMaQbQgAnK2EvYb1jo3d",
+  "oracle": {
+    "publicKey": "3NrfWMEFnFhdWVZN7ubKhDBBcsTPbEXbkkECHuCh3J4G",
+    "oracleAuthority": "AD31rHMdU6Xyt8oDY5C3njQwkMaQbQgAnK2EvYb1jo3d",
+    "permissionPubkey": "FJpcTd1Sxwkq2nRcUZJCehCZfGNJ4Hub5RKSPvdCgHQY",
+    "permissions": "PERMIT_ORACLE_HEARTBEAT"
+  }
+}

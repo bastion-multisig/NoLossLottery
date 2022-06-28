@@ -1,0 +1,10 @@
+{
+  "programState": "4Pw3C1sv5c2DJKP7sasvBvGFV2LUCrbBeovaoc4wE1F4",
+  "maxResult": "100000000",
+  "vrf": {
+    "publicKey": "6MU5zfucvmCukoRvZehfejzwreYvtSvjhi6Nib1wGxtr",
+    "authority": "AD31rHMdU6Xyt8oDY5C3njQwkMaQbQgAnK2EvYb1jo3d",
+    "permissionPubkey": "EbN6SgPuXSmNQuw4Wm7hQSf9nbz7W7TQjyLvBQRot6Fm",
+    "permissions": "PERMIT_VRF_REQUESTS"
+  }
+}
