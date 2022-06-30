@@ -125,9 +125,9 @@ impl Withdraw<'_> {
 
         if ctx.accounts.last_ticket_account.id == ctx.accounts.ticket_account.id {
             // if we need to delete the last ticket
-            // than the users are the same
+            // then the users are the same
             // and we need to modify both in order for anchor
-            // to be able to save tha changes
+            // to be able to save the changes
             ctx.accounts
                 .last_ticket_owner_account
                 .ticket_ids

@@ -1,4 +1,6 @@
 use crate::*;
+
+use std::mem;
 use anchor_lang::prelude::*;
 pub use switchboard_v2::VrfAccountData;
 
@@ -12,7 +14,7 @@ pub struct InitState<'info> {
             authority.key().as_ref(),
         ],
         payer = payer,
-        space = 8 + 8,
+        space = 8 + mem::size_of::<VrfClient>(),
         bump,
     )]
     pub state: AccountLoader<'info, VrfClient>,

@@ -426,6 +426,32 @@
       "args": []
     },
     {
+      "name": "calculatePrize",
+      "accounts": [
+        {
+          "name": "lotteryAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reserve",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "payout",
       "accounts": [
         {
@@ -757,6 +783,6 @@
     }
   ],
   "metadata": {
-    "address": "8Ni7KnRuCheLs1hMrCDBJJFhER2d7VTapNdEn6jiSiJo"
+    "address": "9Xkddq3xMaiiYwSEsduAhJ22aTPEie9PpWmyWDjrQf2L"
   }
 }

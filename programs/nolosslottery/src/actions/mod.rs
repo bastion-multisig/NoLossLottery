@@ -21,3 +21,6 @@ pub use payout::*;
 
 mod provide;
 pub use provide::*;
+
+mod calculate_prize;
+pub use calculate_prize::*;

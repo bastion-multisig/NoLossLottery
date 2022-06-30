@@ -426,6 +426,32 @@ export type Nolosslottery = {
       "args": []
     },
     {
+      "name": "calculatePrize",
+      "accounts": [
+        {
+          "name": "lotteryAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reserve",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "payout",
       "accounts": [
         {
@@ -1180,6 +1206,32 @@ export const IDL: Nolosslottery = {
         {
           "name": "vrf",
           "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "calculatePrize",
+      "accounts": [
+        {
+          "name": "lotteryAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reserve",
+          "isMut": true,
           "isSigner": false
         }
       ],

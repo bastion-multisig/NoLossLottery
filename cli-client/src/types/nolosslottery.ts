@@ -426,6 +426,32 @@ export type Nolosslottery = {
       "args": []
     },
     {
+      "name": "calculatePrize",
+      "accounts": [
+        {
+          "name": "lotteryAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reserve",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "payout",
       "accounts": [
         {
@@ -751,47 +777,6 @@ export type Nolosslottery = {
           },
           {
             "name": "WrongCollateral"
-          }
-        ]
-      }
-    },
-    {
-      "name": "vrfClient",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "type": "u8"
-          },
-          {
-            "name": "maxResult",
-            "type": "u64"
-          },
-          {
-            "name": "resultBuffer",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "result",
-            "type": "u128"
-          },
-          {
-            "name": "lastTimestamp",
-            "type": "i64"
-          },
-          {
-            "name": "authority",
-            "type": "publicKey"
-          },
-          {
-            "name": "vrf",
-            "type": "publicKey"
           }
         ]
       }
@@ -1227,6 +1212,32 @@ export const IDL: Nolosslottery = {
       "args": []
     },
     {
+      "name": "calculatePrize",
+      "accounts": [
+        {
+          "name": "lotteryAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reserve",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "payout",
       "accounts": [
         {
@@ -1552,47 +1563,6 @@ export const IDL: Nolosslottery = {
           },
           {
             "name": "WrongCollateral"
-          }
-        ]
-      }
-    },
-    {
-      "name": "vrfClient",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "type": "u8"
-          },
-          {
-            "name": "maxResult",
-            "type": "u64"
-          },
-          {
-            "name": "resultBuffer",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "result",
-            "type": "u128"
-          },
-          {
-            "name": "lastTimestamp",
-            "type": "i64"
-          },
-          {
-            "name": "authority",
-            "type": "publicKey"
-          },
-          {
-            "name": "vrf",
-            "type": "publicKey"
           }
         ]
       }

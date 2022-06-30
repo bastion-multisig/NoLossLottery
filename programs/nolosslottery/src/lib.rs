@@ -12,7 +12,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use solana_program::entrypoint::ProgramResult;
 use solana_program::program_pack::Pack;
 
-declare_id!("8Ni7KnRuCheLs1hMrCDBJJFhER2d7VTapNdEn6jiSiJo");
+declare_id!("9Xkddq3xMaiiYwSEsduAhJ22aTPEie9PpWmyWDjrQf2L");
 
 const STATE_SEED: &[u8] = b"STATE";
 
@@ -81,6 +81,11 @@ pub mod nolosslottery {
     #[access_control(ctx.accounts.validate(&ctx))]
     pub fn lottery(mut ctx: Context<LotteryInstruction>) -> Result<()> {
         LotteryInstruction::process(&mut ctx)
+    }
+
+    #[access_control(ctx.accounts.validate(&ctx))]
+    pub fn calculate_prize(mut ctx: Context<CalculatePrizeInstruction>) -> Result<()> {
+        CalculatePrizeInstruction::process(&mut ctx)
     }
 
     #[access_control(ctx.accounts.validate(&ctx))]

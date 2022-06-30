@@ -1,10 +1,10 @@
 {
     "dependencies": {
-        "@project-serum/anchor": "^0.18.2",
+        "@project-serum/anchor": "^0.24.2",
         "@solana/spl-token": "^0.2.0",
         "@solendprotocol/solend-sdk": "*",
         "@switchboard-xyz/switchboard-api": "*",
-        "@switchboard-xyz/switchboard-v2": "^0.0.72",
+        "@switchboard-xyz/switchboard-v2": "^0.0.95",
         "add": "^2.0.6",
         "core-js": "^3.21.1",
         "yarn": "^1.22.18"

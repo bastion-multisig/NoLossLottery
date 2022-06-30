@@ -5,7 +5,7 @@ import process from "process";
 import 'core-js/features/array/at';
 
 describe("nolosslottery",  () => {
-    const provider = anchor.Provider.env();
+    const provider = anchor.AnchorProvider.env();
     anchor.setProvider(provider);
     const nolosslottery = anchor.workspace.Nolosslottery as anchor.Program<Nolosslottery>;
     let source_token;
