@@ -52,9 +52,8 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
 
     const [switchboardV2ProgramStateAccount] = ProgramStateAccount.fromSeed(switchboardV2);
     const switchTokenMint = await switchboardV2ProgramStateAccount.getTokenMint();
-    const tokenAccount = await switchTokenMint.createAccount(
-        payer.publicKey
-    );
+    const tokenAccount = await new token.Token(provider.connection, switchTokenMint.address, token.TOKEN_PROGRAM_ID, payer)
+        .createAccount(payer.publicKey)
 
     // Oracle Queue
     const queueAccount = await OracleQueueAccount.create(switchboardV2,

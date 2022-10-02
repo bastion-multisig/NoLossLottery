@@ -1,5 +1,7 @@
 [features]
 seeds = false
+skip-lint = false
+
 [programs.devnet]
 nolosslottery = "9Xkddq3xMaiiYwSEsduAhJ22aTPEie9PpWmyWDjrQf2L"
 
@@ -8,7 +10,7 @@ url = "https://anchor.projectserum.com"
 
 [provider]
 cluster = "devnet"
-wallet = "./owner.json"
+wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.test.ts"

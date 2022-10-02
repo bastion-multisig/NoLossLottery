@@ -630,6 +630,22 @@
       }
     },
     {
+      "name": "Ticket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "owner",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
       "name": "UserDeposit",
       "type": {
         "kind": "struct",
@@ -654,22 +670,6 @@
           },
           {
             "name": "ctokenMint",
-            "type": "publicKey"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Ticket",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "id",
-            "type": "u64"
-          },
-          {
-            "name": "owner",
             "type": "publicKey"
           }
         ]
@@ -742,17 +742,6 @@
       }
     },
     {
-      "name": "VrfErrorCode",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "InvalidSwitchboardVrfAccount"
-          }
-        ]
-      }
-    },
-    {
       "name": "LotteryErrorCode",
       "type": {
         "kind": "enum",
@@ -782,7 +771,14 @@
       }
     }
   ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidSwitchboardVrfAccount",
+      "msg": "Not a valid Switchboard VRF account!"
+    }
+  ],
   "metadata": {
-    "address": "9Xkddq3xMaiiYwSEsduAhJ22aTPEie9PpWmyWDjrQf2L"
+    "address": "7xf7egtRCys8o5RShGDyi6BGYtXApoaTP2jNaBVC2gGb"
   }
 }

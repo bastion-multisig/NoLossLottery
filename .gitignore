@@ -3,4 +3,6 @@
 target
 **/*.rs.bk
 node_modules
+test-ledger
 .idea/
+yarn-error.log
