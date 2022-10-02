@@ -17,7 +17,7 @@ pub struct CalculatePrizeInstruction<'info> {
 }
 
 impl CalculatePrizeInstruction<'_> {
-    pub fn validate(&self, ctx: &Context<Self>) -> Result<()> {
+    pub fn validate(&self, _ctx: &Context<Self>) -> Result<()> {
         Ok(())
     }
 

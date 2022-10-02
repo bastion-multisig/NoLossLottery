@@ -1,6 +1,12 @@
 pub mod init_state;
 pub use init_state::*;
 
+pub mod init_lottery;
+pub use init_lottery::*;
+
+pub mod init_user_deposit;
+pub use init_user_deposit::*;
+
 pub mod update_result;
 pub use update_result::*;
 
