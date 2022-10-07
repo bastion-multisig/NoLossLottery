@@ -3,7 +3,7 @@ seeds = false
 skip-lint = false
 
 [programs.devnet]
-nolosslottery = "9Xkddq3xMaiiYwSEsduAhJ22aTPEie9PpWmyWDjrQf2L"
+nolosslottery = "2jzFdP1ntxFDrNzv4NSe8c28Ycs3hRVko9bcYYGSCFAH"
 
 [registry]
 url = "https://anchor.projectserum.com"

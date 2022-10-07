@@ -630,6 +630,22 @@ export type Nolosslottery = {
       }
     },
     {
+      "name": "ticket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "owner",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
       "name": "userDeposit",
       "type": {
         "kind": "struct",
@@ -654,22 +670,6 @@ export type Nolosslottery = {
           },
           {
             "name": "ctokenMint",
-            "type": "publicKey"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ticket",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "id",
-            "type": "u64"
-          },
-          {
-            "name": "owner",
             "type": "publicKey"
           }
         ]
@@ -742,17 +742,6 @@ export type Nolosslottery = {
       }
     },
     {
-      "name": "VrfErrorCode",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "InvalidSwitchboardVrfAccount"
-          }
-        ]
-      }
-    },
-    {
       "name": "LotteryErrorCode",
       "type": {
         "kind": "enum",
@@ -780,6 +769,13 @@ export type Nolosslottery = {
           }
         ]
       }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidSwitchboardVrfAccount",
+      "msg": "Not a valid Switchboard VRF account!"
     }
   ]
 };
@@ -1416,6 +1412,22 @@ export const IDL: Nolosslottery = {
       }
     },
     {
+      "name": "ticket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "owner",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
       "name": "userDeposit",
       "type": {
         "kind": "struct",
@@ -1440,22 +1452,6 @@ export const IDL: Nolosslottery = {
           },
           {
             "name": "ctokenMint",
-            "type": "publicKey"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ticket",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "id",
-            "type": "u64"
-          },
-          {
-            "name": "owner",
             "type": "publicKey"
           }
         ]
@@ -1528,17 +1524,6 @@ export const IDL: Nolosslottery = {
       }
     },
     {
-      "name": "VrfErrorCode",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "InvalidSwitchboardVrfAccount"
-          }
-        ]
-      }
-    },
-    {
       "name": "LotteryErrorCode",
       "type": {
         "kind": "enum",
@@ -1566,6 +1551,13 @@ export const IDL: Nolosslottery = {
           }
         ]
       }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidSwitchboardVrfAccount",
+      "msg": "Not a valid Switchboard VRF account!"
     }
   ]
 };
