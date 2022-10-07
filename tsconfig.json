@@ -6,6 +6,10 @@
     "module": "commonjs",
     "target": "es6",
     "esModuleInterop": true,
-    "noEmit": true
+    "noEmit": true,
+
+    // Fixes switchboard error TS2304: Cannot find name 'Long'.
+    // Skip type checking all .d.ts files.
+    "skipLibCheck": true                                 
   }
 }
